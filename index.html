@@ -222,8 +222,14 @@
         let currentGrade = null;
         let currentSection = null;
         
-        // Gemini API Configuration (UPDATED: Renamed variable to 'apiKey' for Canvas injection)
-        const apiKey = ""; // Key is provided by Canvas runtime
+        // ====================================================================
+        // GEMINI API KEY CONFIGURATION
+        // 
+        // NOTE: If running this code outside of the Canvas environment, 
+        // REPLACE the empty string with your actual Gemini API Key.
+        // ====================================================================
+        const GEMINI_API_KEY = "AIzaSyALJamFpolfBxaOMWidlkZRK2dk4Gx3mH8"; 
+        
         let chatHistory = [{
             role: "model",
             parts: [{ text: "Hello! I am **STEC-Buddy**, your helpful Kiosk Assistant. I can answer questions about the school, schedules, and rooms. How can I help you today?" }]
@@ -588,8 +594,7 @@
          * Sends a message to the Gemini API with exponential backoff.
          */
         async function sendMessageToGemini(userQuery, systemInstruction, maxRetries = 5) {
-            // FIX: Using the correct 'apiKey' variable name for Canvas runtime injection
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${GEMINI_API_KEY}`;
             const payload = {
                 contents: chatHistory,
                 tools: [{ "google_search": {} }],
