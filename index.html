@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>STEC Kiosk</title>
+    <title>School Kiosk: Real-Time Schedules</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Inter Font -->
@@ -222,8 +222,8 @@
         let currentGrade = null;
         let currentSection = null;
         
-        // Gemini API Configuration (NEW)
-        const GEMINI_API_KEY = ""; // Key is provided by Canvas runtime
+        // Gemini API Configuration (UPDATED: Renamed variable to 'apiKey' for Canvas injection)
+        const apiKey = ""; // Key is provided by Canvas runtime
         let chatHistory = [{
             role: "model",
             parts: [{ text: "Hello! I am **STEC-Buddy**, your helpful Kiosk Assistant. I can answer questions about the school, schedules, and rooms. How can I help you today?" }]
@@ -534,7 +534,7 @@
 
             if (!userQuery) return;
 
-            // FIX 1: Trim chat history to prevent context window overflow (max 10 messages total)
+            // Trim chat history to prevent context window overflow (max 10 messages total)
             const MAX_HISTORY_LENGTH = 10; 
             if (chatHistory.length > MAX_HISTORY_LENGTH) {
                  // Keep the initial welcome message, and the last few turns
@@ -560,7 +560,6 @@
 
             try {
                 // 3. Call the API
-                // FIX 2: Updated system instruction to allow web grounding
                 const systemInstruction = `You are **STEC-Buddy**, the BCSTEC Kiosk Assistant. Your role is to provide helpful, concise, and friendly information about school schedules, rooms, and general school facts. Be polite and keep answers brief. When appropriate, use Google Search to find current, relevant information. Your primary schedule data is static, so defer to general knowledge or mock information for schedule-related queries.`;
                 const geminiResponse = await sendMessageToGemini(userQuery, systemInstruction);
 
@@ -587,13 +586,12 @@
 
         /**
          * Sends a message to the Gemini API with exponential backoff.
-         * Includes improved error logging for better diagnostics.
          */
         async function sendMessageToGemini(userQuery, systemInstruction, maxRetries = 5) {
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${GEMINI_API_KEY}`;
+            // FIX: Using the correct 'apiKey' variable name for Canvas runtime injection
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
             const payload = {
                 contents: chatHistory,
-                // FIX 3: Added Google Search grounding tool
                 tools: [{ "google_search": {} }],
                 systemInstruction: {
                     parts: [{ text: systemInstruction }]
@@ -614,7 +612,6 @@
                         if (text) {
                             return { text };
                         } else {
-                            // Log when the API returns 200 but no text content (unexpected)
                             console.error(`Attempt ${attempt + 1}: API call successful but returned no text content. Full result:`, result);
                             throw new Error("API response successful but content was empty.");
                         }
