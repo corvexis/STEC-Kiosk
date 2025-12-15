@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>STEC Kiosk</title>
+    <title>School Kiosk: Real-Time Schedules</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Inter Font -->
@@ -534,6 +534,14 @@
 
             if (!userQuery) return;
 
+            // FIX 1: Trim chat history to prevent context window overflow (max 10 messages total)
+            const MAX_HISTORY_LENGTH = 10; 
+            if (chatHistory.length > MAX_HISTORY_LENGTH) {
+                 // Keep the initial welcome message, and the last few turns
+                 chatHistory = [chatHistory[0], ...chatHistory.slice(-(MAX_HISTORY_LENGTH - 1))];
+            }
+
+
             // 1. Add user message to history and UI
             chatHistory.push({ role: "user", parts: [{ text: userQuery }] });
             renderChat();
@@ -552,7 +560,8 @@
 
             try {
                 // 3. Call the API
-                const systemInstruction = `You are **STEC-Buddy**, the BCSTEC Kiosk Assistant. Your role is to provide helpful, concise, and friendly information about school schedules, rooms, and general school facts. Be polite and keep answers brief. You do not have access to real-time data, so you must answer based on general knowledge or mock information about a typical school environment.`;
+                // FIX 2: Updated system instruction to allow web grounding
+                const systemInstruction = `You are **STEC-Buddy**, the BCSTEC Kiosk Assistant. Your role is to provide helpful, concise, and friendly information about school schedules, rooms, and general school facts. Be polite and keep answers brief. When appropriate, use Google Search to find current, relevant information. Your primary schedule data is static, so defer to general knowledge or mock information for schedule-related queries.`;
                 const geminiResponse = await sendMessageToGemini(userQuery, systemInstruction);
 
                 // 4. Add model response to history
@@ -584,6 +593,8 @@
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${GEMINI_API_KEY}`;
             const payload = {
                 contents: chatHistory,
+                // FIX 3: Added Google Search grounding tool
+                tools: [{ "google_search": {} }],
                 systemInstruction: {
                     parts: [{ text: systemInstruction }]
                 }
