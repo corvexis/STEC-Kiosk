@@ -3,16 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>STEC Kiosk</title>
+    <title>School Kiosk: Real-Time Schedules</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Inter Font -->
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
         body { font-family: 'Inter', sans-serif; }
+        
         /* Kiosk Mode: Fullscreen feel, allow vertical scroll on small screens */
         html, body, #app { height: 100%; margin: 0; padding: 0; }
         #app { overflow-y: auto; }
+        
         /* FullCalendar styling tweaks - Ensure visibility in dark mode */
         .fc-toolbar-title { 
             font-size: 1.5rem !important; 
@@ -32,6 +34,23 @@
             #calendar { padding: 1rem; }
         }
         #map { height: 100%; width: 100%; border-radius: 0.5rem; }
+
+        /* Off-Canvas Menu Styling */
+        #menu-sidebar {
+            transition: transform 0.3s ease-out;
+            transform: translateX(100%);
+            z-index: 60;
+        }
+        #menu-sidebar.open {
+            transform: translateX(0);
+        }
+        .text-gemini {
+            color: #1973E8; /* Google Blue */
+        }
+        /* Style for the attribution footer */
+        .app-footer {
+            background-color: #1f2937; /* Gray-800 */
+        }
     </style>
 
     <!-- Leaflet CSS for Map -->
@@ -48,18 +67,58 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
         crossorigin=""></script>
+    
+    <!-- Firebase Imports for Auth (for Canvas environment sign-in) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, where, getDocs, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        // Expose Firebase objects globally for use in the main script block
+        window.firebase = {
+            initializeApp, getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, signOut,
+            getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, where, getDocs, setLogLevel
+        };
+    </script>
 </head>
 <body>
 
-    <!-- Removed dark:bg-gray-900, using it as the default -->
-    <div id="app" class="flex flex-col bg-gray-900 h-screen transition-colors duration-300">
+    <!-- Off-Canvas Menu -->
+    <div id="menu-sidebar" class="fixed top-0 right-0 w-64 h-full bg-gray-900 border-l border-gray-700 shadow-xl p-6 flex flex-col justify-start">
+        <button id="close-menu" class="absolute top-4 right-4 text-gray-300 hover:text-pink-400">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+        <h3 class="text-xl font-bold mb-6 text-pink-400 mt-8">Admin Access</h3>
+        
+        <!-- Authentication Button -->
+        <button id="auth-button" class="w-full text-white font-bold py-3 px-4 rounded-lg shadow-md transition duration-300 mb-4 bg-green-600 hover:bg-green-700">
+            Sign In as Admin
+        </button>
+        <button id="add-new-schedule-button" class="hidden w-full bg-pink-600 text-white font-bold py-3 px-4 rounded-lg shadow-md hover:bg-pink-700 transition duration-300">
+            + Add New Schedule
+        </button>
 
-        <!-- HEADER (Pink and Grey) - Sign-in button and dark mode toggle removed -->
+        <p class="text-sm text-gray-400 mt-auto pt-4 border-t border-gray-700">
+            Signed in as: <span id="current-signed-in-user" class="font-semibold text-pink-400 block truncate">Kiosk Viewer</span>
+        </p>
+    </div>
+
+    <!-- Main App Container -->
+    <div id="app" class="flex flex-col bg-gray-900 h-full transition-colors duration-300">
+
+        <!-- HEADER (Pink and Grey) -->
         <header class="bg-gray-800 text-white shadow-xl p-4 flex justify-between items-center z-10 sticky top-0">
-            <h1 class="text-xl md:text-3xl font-extrabold tracking-tight text-pink-400">
-                <span id="school-name">BCSTEC</span> Kiosk
-            </h1>
-            <!-- User Status (Always shows viewer status) -->
+            <!-- Left Side: Hamburger Menu & Title -->
+            <div class="flex items-center space-x-3">
+                <button id="hamburger-menu" class="p-1 rounded hover:bg-gray-700 transition duration-150">
+                    <svg class="w-6 h-6 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                </button>
+                <h1 class="text-xl md:text-3xl font-extrabold tracking-tight text-pink-400">
+                    <span id="school-name">BCSTEC</span> Kiosk
+                </h1>
+            </div>
+
+            <!-- Right Side: User Status -->
             <span id="user-status" class="text-xs md:text-sm font-semibold rounded-full px-2 py-1 md:px-3 md:py-1 bg-pink-700">
                 Kiosk View Mode
             </span>
@@ -67,7 +126,7 @@
 
         <!-- MAIN CONTENT AREA: Stacks vertically on mobile -->
         <div class="flex-grow flex flex-col md:flex-row overflow-hidden">
-            <!-- SIDEBAR/FILTERS: Permanent dark theme applied -->
+            <!-- SIDEBAR/FILTERS -->
             <aside id="filter-sidebar" class="w-full md:w-1/4 md:max-w-xs bg-gray-800 p-4 md:overflow-y-auto border-r border-gray-700 shadow-md transition-colors duration-300">
                 <h2 class="text-xl font-bold mb-4 text-pink-400">Filter Schedule</h2>
 
@@ -75,7 +134,6 @@
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-300 mb-2">Program:</label>
                     <div class="flex space-x-2" id="program-tabs">
-                        <!-- Classes adjusted to permanent dark state -->
                         <button data-program="Junior High" class="program-tab bg-pink-900 text-pink-100 font-semibold py-2 px-4 rounded-lg flex-1 shadow-sm hover:bg-pink-800 transition duration-150 text-sm">Junior High</button>
                         <button data-program="Senior High" class="program-tab bg-gray-700 text-gray-300 font-semibold py-2 px-4 rounded-lg flex-1 shadow-sm hover:bg-gray-600 transition duration-150 text-sm">Senior High</button>
                     </div>
@@ -99,13 +157,13 @@
                     See Schedule
                 </button>
 
-                <!-- Ask Assistant Button (UPDATED NAME) -->
+                <!-- Ask Assistant Button -->
                 <button id="ask-assistant-button"
                         class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg shadow-md hover:bg-blue-700 transition duration-300 mt-4 text-sm">
                     Ask STEC-Buddy (AI)
                 </button>
-
-                <!-- Action Button for Admins/Teachers - Permanently Hidden -->
+                
+                <!-- Action Button for Admins/Teachers - Now accessible via off-canvas menu -->
                 <button id="add-schedule-button"
                         class="hidden w-full bg-green-500 text-white font-bold py-3 px-4 rounded-lg shadow-md hover:bg-green-600 transition duration-300 mt-4 text-sm">
                     + Add New Class
@@ -122,9 +180,9 @@
 
             </aside>
 
-            <!-- MAIN VIEW (Calendar or Map) - FIX: Added flex flex-col and changed overflow-auto to overflow-hidden -->
+            <!-- MAIN VIEW (Calendar or Map) -->
             <main id="main-view-container" class="flex-grow flex flex-col bg-gray-800 overflow-hidden transition-colors duration-300">
-                <!-- Calendar View - FIX: Changed h-full to flex-grow to ensure it takes remaining vertical space -->
+                <!-- Calendar View -->
                 <div id="calendar-view" class="flex-grow w-full min-h-[500px] md:min-h-0">
                     <div id='calendar' class="h-full w-full"></div>
                 </div>
@@ -135,9 +193,25 @@
                 </div>
             </main>
         </div>
+
+        <!-- FOOTER / ATTRIBUTIONS -->
+        <footer class="app-footer text-center p-3 text-gray-400 text-xs md:text-sm border-t border-gray-700">
+            <p class="mb-1">Made by <span class="font-semibold text-white">Hero Ginete</span></p>
+            <div class="flex items-center justify-center font-bold">
+                <p class="mr-2">STEC-Buddy Powered by:</p>
+                <svg viewBox="0 0 24 24" class="w-5 h-5 mr-1" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Google Gemini Logo Path (Simplified, using Google colors) -->
+                    <path fill="#4285F4" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
+                    <path fill="#FBBC05" d="M12 6.5l2.5 4.5h-5L12 6.5z"/>
+                    <path fill="#EA4335" d="M12 17.5l-2.5-4.5h5L12 17.5z"/>
+                    <path fill="#34A853" d="M15 12h-6v-1h6v1z"/>
+                </svg>
+                <span class="text-gemini">Google Gemini</span>
+            </div>
+        </footer>
     </div>
 
-    <!-- MODAL: Class Detail (Edit form permanently hidden) - Permanent dark theme applied -->
+    <!-- MODAL: Class Detail (Edit form now conditionally visible) -->
     <div id="detail-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 hidden items-center justify-center z-50 p-4">
         <div class="bg-gray-800 p-8 rounded-xl shadow-2xl w-full max-w-lg transition-colors duration-300">
             <h3 id="detail-title" class="text-2xl font-bold mb-4 text-pink-400">Class Details</h3>
@@ -148,7 +222,7 @@
                 <p><span class="font-medium">Time:</span> <span id="detail-time"></span></p>
                 <p><span class="font-medium">Program:</span> <span id="detail-program"></span></p>
             </div>
-            <!-- Edit Form is permanently hidden for Kiosk mode -->
+            <!-- Edit Form is conditionally shown for Admin/Teacher -->
             <form id="edit-form" class="mt-6 space-y-4 hidden">
                 <h4 class="text-xl font-semibold border-t pt-4 text-pink-400 border-gray-700">Edit Class (Admin/Teacher)</h4>
                 <input type="hidden" id="edit-id">
@@ -158,9 +232,15 @@
 
                 <label class="block text-sm font-medium text-gray-300">New Start Time (YYYY-MM-DD HH:MM):</label>
                 <input type="datetime-local" id="edit-start" required class="w-full p-2 border rounded border-gray-600 bg-gray-700 text-white focus:ring-pink-500 focus:border-pink-500">
+                
+                <label class="block text-sm font-medium text-gray-300">New End Time (YYYY-MM-DD HH:MM):</label>
+                <input type="datetime-local" id="edit-end" required class="w-full p-2 border rounded border-gray-600 bg-gray-700 text-white focus:ring-pink-500 focus:border-pink-500">
 
                 <label class="block text-sm font-medium text-gray-300">New Room:</label>
                 <select id="edit-room" class="w-full p-2 border rounded border-gray-600 bg-gray-700 text-white focus:ring-pink-500 focus:border-pink-500"></select>
+                
+                <label class="block text-sm font-medium text-gray-300">New Teacher:</label>
+                <select id="edit-teacher" class="w-full p-2 border rounded border-gray-600 bg-gray-700 text-white focus:ring-pink-500 focus:border-pink-500"></select>
 
                 <div class="flex flex-col space-y-2 md:space-y-0 md:flex-row md:space-x-4">
                     <button type="submit" class="flex-1 bg-pink-600 text-white py-2 rounded-lg hover:bg-pink-700 transition duration-300">Save Changes</button>
@@ -172,7 +252,7 @@
         </div>
     </div>
     
-    <!-- MODAL: Assistant Chat (NEW NAME: STEC-Buddy) -->
+    <!-- MODAL: Assistant Chat (STEC-Buddy) -->
     <div id="assistant-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 hidden items-center justify-center z-50 p-4">
         <div class="bg-gray-800 p-8 rounded-xl shadow-2xl w-full max-w-lg transition-colors duration-300 flex flex-col h-5/6">
             <h3 class="text-2xl font-bold mb-4 text-blue-400 border-b border-gray-700 pb-2">STEC-Buddy: Your Kiosk Assistant</h3>
@@ -196,38 +276,73 @@
         </div>
     </div>
 
+    <!-- MODAL: Supabase Login (New) -->
+    <div id="login-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 hidden items-center justify-center z-50 p-4">
+        <div class="bg-gray-800 p-8 rounded-xl shadow-2xl w-full max-w-sm transition-colors duration-300">
+            <h3 class="text-2xl font-bold mb-4 text-green-400">Teacher/Admin Sign In</h3>
+            <form id="login-form" class="space-y-4">
+                <p id="login-error-message" class="text-red-400 text-sm hidden"></p>
+
+                <div>
+                    <label for="login-name" class="block text-sm font-medium text-gray-300 mb-1">Full Name (from Profiles Table)</label>
+                    <input type="text" id="login-name" required 
+                           class="w-full p-2 border border-gray-600 bg-gray-700 text-white rounded-lg focus:ring-green-500 focus:border-green-500 shadow-sm">
+                </div>
+
+                <div>
+                    <label for="login-passkey" class="block text-sm font-medium text-gray-300 mb-1">Passkey</label>
+                    <input type="password" id="login-passkey" required 
+                           class="w-full p-2 border border-gray-600 bg-gray-700 text-white rounded-lg focus:ring-green-500 focus:border-green-500 shadow-sm">
+                </div>
+                
+                <button type="submit" id="login-button" 
+                        class="w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg shadow-md hover:bg-green-700 transition duration-300 disabled:bg-gray-500">
+                    Sign In
+                </button>
+            </form>
+
+            <button id="close-login-modal" class="mt-4 w-full bg-gray-700 text-gray-300 py-2 rounded-lg hover:bg-gray-600 transition duration-300">Cancel</button>
+        </div>
+    </div>
+
 
     <script type="module">
+        // ====================================================================
+        // FIREBASE/CANVAS ENVIRONMENT CONFIG
+        // ====================================================================
+        const firebase = window.firebase;
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+        let fbApp, auth, db; // Firebase instances
+
         // ====================================================================
         // SUPABASE CONFIGURATION
         // ====================================================================
         const SUPABASE_URL = 'https://nwwkgmlnnlsmbjrvcnaj.supabase.co'; 
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im53d2tnbWxubmxzbWJqcnZjbmFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3OTYxMDcsImV4cCI6MjA4MTM3MjEwN30.Stz0PC0XAxlAkmHpWxY9reIeVzbXaDKuiSUOrJ4HB7Y'; 
 
-        // Check for placeholder
         if (SUPABASE_URL.startsWith('YOUR')) {
             console.error("CRITICAL ERROR: Please update SUPABASE_URL and SUPABASE_ANON_KEY in the script.");
         }
 
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        // ====================================================================
+        // GLOBAL STATE
+        // ====================================================================
         let calendar = null;
         let map = null;
         let allClasses = [];
         let allRooms = [];
         let allProfiles = [];
-        let allPrograms = []; // Master list of programs for filters
-        // Role is permanently set to student as Kiosk is public
-        const currentRole = 'student'; 
+        let allPrograms = []; 
+        let currentRole = 'student'; // Role determined by Supabase login
+        let currentUsername = 'Kiosk Viewer';
         let currentProgram = 'Junior High';
         let currentGrade = null;
         let currentSection = null;
-        
-        // ====================================================================
-        // GEMINI API KEY CONFIGURATION
-        // 
-        // NOTE: If running this code outside of the Canvas environment, 
-        // REPLACE the empty string with your actual Gemini API Key.
-        // ====================================================================
         const GEMINI_API_KEY = "AIzaSyALJamFpolfBxaOMWidlkZRK2dk4Gx3mH8"; 
         
         let chatHistory = [{
@@ -241,7 +356,6 @@
         
         /**
          * Gets the current time formatted for the Philippine time zone (Asia/Manila, UTC+8).
-         * This structured string is passed to the LLM for context-aware scheduling.
          */
         function getPhCurrentTime() {
             const options = {
@@ -254,7 +368,6 @@
                 second: '2-digit',
                 hour12: false
             };
-            // Format the current time explicitly in PH time
             const formatter = new Intl.DateTimeFormat('en-US', options);
             const parts = formatter.formatToParts(new Date());
 
@@ -272,20 +385,17 @@
 
         // ====================================================================
         // DATA FETCHING AND REAL-TIME SUBSCRIPTIONS
-        // Kiosk mode fetches data for viewing only.
         // ====================================================================
 
-        /**
-         * Fetches all static data (Rooms, Profiles, and Programs)
-         */
         async function fetchStaticData() {
             try {
+                // Fetch Rooms
                 const { data: rooms, error: roomError } = await supabase.from('rooms').select('*');
                 if (roomError) throw roomError;
                 allRooms = rooms;
-                console.log('Fetched Rooms:', allRooms.length);
-                initializeMap();
+                initializeMap(); // Initialize map as soon as rooms are available
 
+                // Fetch Profiles (for login validation and teacher selection in admin mode)
                 const { data: profiles, error: profileError } = await supabase.from('profiles').select('id, full_name, role');
                 if (profileError) throw profileError;
                 allProfiles = profiles;
@@ -295,20 +405,16 @@
                 const { data: programs, error: programError } = await supabase.from('programs').select('*');
                 if (programError) throw programError;
                 allPrograms = programs;
-                console.log('Fetched Programs:', allPrograms.length);
-
-                renderFilters(); // Render filters immediately after fetching master programs list
+                
+                renderFilters();
+                renderTeacherSelects(); // Populate teacher dropdowns for admin mode
 
             } catch (error) {
                 console.error('Error fetching static data:', error.message);
             }
         }
 
-        /**
-         * Sets up the Realtime listener for class schedules.
-         */
         function setupRealtimeListener() {
-            // Subscribe to changes in the classes table
             supabase
                 .channel('classes_changes')
                 .on(
@@ -316,38 +422,32 @@
                     { event: '*', schema: 'public', table: 'classes' },
                     (payload) => {
                         console.log('Realtime change received:', payload);
-                        fetchAndRenderClasses(); // Refetch all classes on any change
+                        fetchAndRenderClasses(); 
                     }
                 )
                 .subscribe();
 
-            // Initial fetch
             fetchAndRenderClasses();
         }
 
-        /**
-         * Fetches all class schedules and updates the calendar.
-         */
         async function fetchAndRenderClasses() {
             try {
-                // Fetch classes and join necessary profile and room data
                 const { data, error } = await supabase
                     .from('classes')
                     .select(`
-                        id, subject, start_time, end_time, room_id,
+                        id, subject, start_time, end_time, room_id, teacher_id,
                         programs(name, grade_level, section),
                         rooms(id, name, floor, map_coords),
-                        teacher:profiles(full_name)
+                        teacher:profiles(id, full_name)
                     `);
 
                 if (error) throw error;
                 allClasses = data;
-                console.log('Fetched Classes:', allClasses.length);
                 
-                // We call renderCalendar here only to ensure the calendar exists initially, 
-                // but subsequent rendering will rely on the "See Schedule" button click.
                 if (!calendar) {
                     renderCalendar();
+                } else {
+                    renderCalendar(); // Re-render calendar to update events
                 }
 
             } catch (error) {
@@ -360,37 +460,81 @@
         }
 
         // ====================================================================
-        // UI RENDERING FUNCTIONS
+        // UI RENDERING & ADMIN TOOLS
         // ====================================================================
 
         /**
-         * Renders filter dropdowns based on current data (master list of programs).
+         * Updates all UI elements based on the current user role.
          */
+        function updateUserUI() {
+            // 1. Update Header Status
+            const statusEl = document.getElementById('user-status');
+            const authButton = document.getElementById('auth-button');
+            const currentSignedUserEl = document.getElementById('current-signed-in-user');
+            
+            currentSignedUserEl.textContent = currentUsername;
+
+            if (currentRole === 'teacher' || currentRole === 'admin') {
+                statusEl.textContent = `${currentRole.toUpperCase()} MODE`;
+                statusEl.classList.remove('bg-pink-700', 'bg-gray-500');
+                statusEl.classList.add('bg-green-700');
+
+                authButton.textContent = 'Sign Out';
+                authButton.classList.remove('bg-green-600', 'hover:bg-green-700');
+                authButton.classList.add('bg-red-600', 'hover:bg-red-700');
+                
+                // 2. Show Admin Controls
+                document.getElementById('add-schedule-button').classList.remove('hidden');
+                document.getElementById('add-new-schedule-button').classList.remove('hidden');
+            } else {
+                currentRole = 'student'; // Default fallback
+                statusEl.textContent = 'Kiosk View Mode';
+                statusEl.classList.remove('bg-green-700');
+                statusEl.classList.add('bg-pink-700');
+                
+                authButton.textContent = 'Sign In as Admin';
+                authButton.classList.remove('bg-red-600', 'hover:bg-red-700');
+                authButton.classList.add('bg-green-600', 'hover:bg-green-700');
+
+                // 3. Hide Admin Controls
+                document.getElementById('add-schedule-button').classList.add('hidden');
+                document.getElementById('add-new-schedule-button').classList.add('hidden');
+            }
+            // Close menu after status update
+            document.getElementById('menu-sidebar').classList.remove('open');
+        }
+
+        function renderTeacherSelects() {
+            const teacherSelectEl = document.getElementById('edit-teacher');
+            if (!teacherSelectEl) return;
+            
+            // Filter profiles to include only Teachers and Admins for assignment
+            const teachers = allProfiles.filter(p => p.role === 'teacher' || p.role === 'admin');
+            teacherSelectEl.innerHTML = '<option value="">Select Teacher</option>';
+            teachers.forEach(teacher => {
+                teacherSelectEl.innerHTML += `<option value="${teacher.id}">${teacher.full_name}</option>`;
+            });
+        }
+        
         function renderFilters() {
-            // Use allPrograms as the source for the filter options, not allClasses
             let currentProgramData = allPrograms.filter(p => p.name === currentProgram);
 
             // 1. Grade Filter
-            // Extract unique grade levels from the filtered program list
             const grades = [...new Set(currentProgramData.map(p => p.grade_level))].sort((a, b) => a - b);
             const gradeFilterEl = document.getElementById('grade-filter');
             gradeFilterEl.innerHTML = `<option value="">All Grades</option>`;
             grades.forEach(grade => {
-                // Ensure grade comparison handles string/number mismatch if it occurs
                 gradeFilterEl.innerHTML += `<option value="${grade}" ${grade == currentGrade ? 'selected' : ''}>Grade ${grade}</option>`;
             });
-
 
             // Filter program data by current grade if set, for populating section filters
             let sectionsSource = currentProgramData;
             if (currentGrade) {
-                // Filter the sections based on the selected grade
                 sectionsSource = currentProgramData.filter(p => p.grade_level == currentGrade);
             }
 
-            // 2. Section Filter (Dynamically filtered by Program and Grade)
+            // 2. Section Filter 
             const sectionFilterEl = document.getElementById('section-filter');
-            // Extract unique sections from the filtered program list
             const sections = [...new Set(sectionsSource.map(p => p.section))].sort();
 
             sectionFilterEl.innerHTML = `<option value="">All Sections</option>`;
@@ -399,16 +543,12 @@
             });
         }
 
-        /**
-         * Renders or re-renders the FullCalendar view based on current filters.
-         */
         function renderCalendar() {
             const calendarEl = document.getElementById('calendar');
 
             // 1. Apply Filters
             const filteredClasses = allClasses.filter(c => {
                 const programMatch = c.programs.name === currentProgram;
-                // Loose comparison == is used as grade_level might be number in data
                 const gradeMatch = !currentGrade || c.programs.grade_level == currentGrade; 
                 const sectionMatch = !currentSection || c.programs.section === currentSection;
 
@@ -424,17 +564,19 @@
                 allDay: false,
                 extendedProps: {
                     program: `${c.programs.name} G${c.programs.grade_level} Sec ${c.programs.section}`,
-                    teacher: c.teacher.full_name,
-                    room: c.rooms.name
+                    teacherName: c.teacher ? c.teacher.full_name : 'TBD',
+                    teacherId: c.teacher ? c.teacher.id : null,
+                    room: c.rooms.name,
+                    roomId: c.room_id,
+                    grade: c.programs.grade_level,
+                    section: c.programs.section,
                 },
-                // Pink/Grey Theme Colors
-                backgroundColor: c.programs.name === 'Junior High' ? '#ec4899' : '#6b7280', // Pink-500 or Gray-500
-                borderColor: c.programs.name === 'Junior High' ? '#be185d' : '#374151' // Pink-700 or Gray-700
+                backgroundColor: c.programs.name === 'Junior High' ? '#ec4899' : '#6b7280', 
+                borderColor: c.programs.name === 'Junior High' ? '#be185d' : '#374151' 
             }));
 
             // 3. Initialize/Update Calendar
             if (!calendar) {
-                // Kiosk mode: editable is false, selectable is false
                 calendar = new FullCalendar.Calendar(calendarEl, {
                     initialView: 'timeGridWeek',
                     headerToolbar: {
@@ -444,37 +586,36 @@
                     },
                     events: events,
                     nowIndicator: true,
-                    editable: false, 
+                    editable: currentRole === 'admin' || currentRole === 'teacher', 
                     selectable: false,
                     slotMinTime: '07:00:00',
                     slotMaxTime: '18:00:00',
                     eventClick: handleEventClick,
-                    // FIX: Ensure height is defined for the calendar to load correctly in a flex container
                     height: '100%', 
-                    // Event drop/resize handlers are removed as editable is false
+                    // Add eventDrop and eventResize handlers for admin role
+                    eventDrop: handleEventChange,
+                    eventResize: handleEventChange,
                 });
                 calendar.render();
             } else {
+                // Update editable status based on currentRole
+                calendar.setOption('editable', currentRole === 'admin' || currentRole === 'teacher');
                 calendar.setOption('events', events);
                 calendar.refetchEvents();
             }
         }
 
-        /**
-         * Initializes the Leaflet map for the floor plan.
-         */
         function initializeMap() {
             if (map) return;
-
             // Use a placeholder image for the floor plan
             const floorPlanImageUrl = 'https://placehold.co/1000x800/222222/cccccc?text=SCHOOL+FLOOR+PLAN';
-            const imageBounds = [[-800, 0], [0, 1000]]; // Define map bounds for the image (0,0 is top-left)
+            const imageBounds = [[-800, 0], [0, 1000]]; 
 
             map = L.map('map', {
                 crs: L.CRS.Simple,
                 minZoom: -2,
                 maxZoom: 2,
-                center: [-400, 500], // Center of the image
+                center: [-400, 500], 
                 zoom: 0,
                 maxBounds: imageBounds,
                 maxBoundsViscosity: 1.0
@@ -482,18 +623,15 @@
 
             L.imageOverlay(floorPlanImageUrl, imageBounds).addTo(map);
 
-            // Add room markers (hotspots)
             allRooms.forEach(room => {
-                // Ensure room has map coordinates for Leaflet
                 if (room.map_coords && room.map_coords.lat && room.map_coords.lng) {
                     const marker = L.marker([room.map_coords.lat, room.map_coords.lng]).addTo(map);
 
-                    // Find classes currently happening in this room
                     const now = new Date();
                     const currentClasses = allClasses.filter(c => {
                         const start = new Date(c.start_time);
                         const end = new Date(c.end_time);
-                        const dayOfWeek = start.getDay(); // 0=Sun, 1=Mon...
+                        const dayOfWeek = start.getDay(); 
                         return c.room_id === room.id && now >= start && now <= end && now.getDay() === dayOfWeek;
                     });
 
@@ -502,7 +640,6 @@
                     if (currentClasses.length > 0) {
                         popupContent += `<hr class="my-1"><strong>CURRENTLY:</strong><br>`;
                         currentClasses.forEach(c => {
-                             // Use the teacher name from the joined object (c.teacher.full_name) 
                              const teacherName = c.teacher ? c.teacher.full_name : 'N/A';
                              popupContent += `<div>${c.subject} (G${c.programs.grade_level}) - ${teacherName}</div>`;
                         });
@@ -515,24 +652,20 @@
                     console.warn(`Room ${room.name} is missing map coordinates.`);
                 }
             });
-            map.fitBounds(imageBounds); // Zoom to fit the image
+            map.fitBounds(imageBounds); 
         }
-
+        
         // ====================================================================
-        // GEMINI ASSISTANT FUNCTIONS
+        // GEMINI ASSISTANT FUNCTIONS (Kept from previous version)
         // ====================================================================
 
-        /**
-         * Renders the chat history into the modal.
-         */
         function renderChat() {
             const chatHistoryEl = document.getElementById('chat-history');
             chatHistoryEl.innerHTML = '';
             
             chatHistory.forEach(message => {
                 const isUser = message.role === 'user';
-                // Only use the SHORT user query for display
-                const text = message.parts[0].text; 
+                const text = message.parts[0].text.startsWith('\nCurrent Time') ? message.parts[0].text.split('Original User Question:')[1].trim() : message.parts[0].text;
                 
                 const messageEl = document.createElement('div');
                 messageEl.className = `flex ${isUser ? 'justify-end' : 'justify-start'}`;
@@ -546,7 +679,6 @@
                     bubbleEl.className += ' bg-blue-900 text-blue-100 rounded-bl-none';
                 }
 
-                // Simple Markdown to HTML conversion for basic formatting (bold/italics)
                 let formattedText = text;
                 formattedText = formattedText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
                 formattedText = formattedText.replace(/\*(.*?)\*/g, '<em>$1</em>');
@@ -557,13 +689,9 @@
                 chatHistoryEl.appendChild(messageEl);
             });
             
-            // Scroll to the bottom
             chatHistoryEl.scrollTop = chatHistoryEl.scrollHeight;
         }
 
-        /**
-         * Handles sending a message, updates history, and calls the Gemini API.
-         */
         async function handleSendMessage(e) {
             e.preventDefault();
             const inputEl = document.getElementById('chat-input');
@@ -573,39 +701,31 @@
 
             if (!userQuery) return;
 
-            // Trim chat history to prevent context window overflow (max 10 messages total)
             const MAX_HISTORY_LENGTH = 10; 
             if (chatHistory.length > MAX_HISTORY_LENGTH) {
-                 // Keep the initial welcome message, and the last few turns
                  chatHistory = [chatHistory[0], ...chatHistory.slice(-(MAX_HISTORY_LENGTH - 1))];
             }
 
-
-            // 1. Add user message to history and UI (SHORT VERSION)
-            // This is the version shown to the user in the chat window
             chatHistory.push({ role: "user", parts: [{ text: userQuery }] });
             renderChat();
             inputEl.value = '';
 
-            // 2. Prepare context data for the LLM calculation, using PH time
             const nowPhTime = getPhCurrentTime();
             const scheduleContext = allClasses.map(c => ({
                 grade: c.programs.grade_level,
                 section: c.programs.section,
                 subject: c.subject,
-                // Assuming these database times are local PH times
                 startTime: c.start_time, 
                 endTime: c.end_time,
                 room: c.rooms.name,
                 teacher: c.teacher.full_name
             }));
             const contextData = {
-                currentTime: nowPhTime, // This is the PH localized string
+                currentTime: nowPhTime, 
                 schedule: scheduleContext
             };
 
 
-            // 3. Disable input and show loading
             sendButton.disabled = true;
             sendButton.textContent = 'Thinking...';
             chatHistoryEl.innerHTML += `
@@ -617,17 +737,13 @@
             chatHistoryEl.scrollTop = chatHistoryEl.scrollHeight;
 
             try {
-                // 4. Define system instruction for schedule calculation
                 const systemInstruction = `You are **STEC-Buddy**, the BCSTEC Kiosk Assistant. You must use the provided current time and schedule data to answer specific questions about the next class or current class for a given grade and section (e.g., Grade 8 Gold). 
 ***IMPORTANT TIME ZONE RULE: All times provided (currentTime and schedule times) are in PH Time (Philippine Standard Time, UTC+8).*** If the data is insufficient or the question is general, answer politely using general knowledge and the Google Search tool. When calculating the next class, only consider classes that occur today or later and whose start time is strictly *after* the provided currentTime.`;
                 
-                // 5. Call the API, passing contextData and the FULL history
                 const geminiResponse = await sendMessageToGemini(userQuery, systemInstruction, contextData, chatHistory);
 
-                // 6. Add model response to history
                 chatHistory.push({ role: "model", parts: [{ text: geminiResponse.text }] });
                 
-                // 7. Re-render chat
                 renderChat();
 
             } catch (error) {
@@ -638,19 +754,13 @@
                 });
                 renderChat();
             } finally {
-                // 8. Re-enable input
                 document.getElementById('loading-indicator')?.remove();
                 sendButton.disabled = false;
                 sendButton.textContent = 'Send';
             }
         }
 
-        /**
-         * Sends a message to the Gemini API with exponential backoff.
-         * Injects the schedule context into the last user message of the history payload.
-         */
         async function sendMessageToGemini(userQuery, systemInstruction, contextData, history, maxRetries = 5) {
-            // 1. Build the dynamic user part containing the context
             const fullUserQuery = `
 Current Time: ${contextData.currentTime}
 
@@ -659,15 +769,12 @@ Schedule Context (JSON, ${contextData.schedule.length} entries): ${JSON.stringif
 Original User Question: ${userQuery}
 `;
 
-            // 2. Create the API contents array based on history, but replace the LAST user message with the full context.
-            const apiContents = JSON.parse(JSON.stringify(history)); // Deep copy
-            // The last entry is the user's short query. Replace its content with the full context.
+            const apiContents = JSON.parse(JSON.stringify(history)); 
             apiContents[apiContents.length - 1].parts = [{ text: fullUserQuery }];
-
 
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${GEMINI_API_KEY}`;
             const payload = {
-                contents: apiContents, // Use the context-injected history
+                contents: apiContents,
                 tools: [{ "google_search": {} }],
                 systemInstruction: {
                     parts: [{ text: systemInstruction }]
@@ -688,19 +795,15 @@ Original User Question: ${userQuery}
                         if (text) {
                             return { text };
                         } else {
-                            console.error(`Attempt ${attempt + 1}: API call successful but returned no text content. Full result:`, result);
                             throw new Error("API response successful but content was empty.");
                         }
                     } else if (response.status === 429 && attempt < maxRetries - 1) {
-                        // Rate limit error, retry with exponential backoff
                         const delay = Math.pow(2, attempt) * 1000;
                         await new Promise(resolve => setTimeout(resolve, delay));
                         continue;
                     } else {
-                        // Log other non-success status codes
                         const errorBody = await response.text();
-                        console.error(`Attempt ${attempt + 1}: API call failed with status: ${response.status}. Response Body:`, errorBody);
-                        throw new Error(`API call failed with status: ${response.status}`);
+                        throw new Error(`API call failed with status: ${response.status}. Response Body: ${errorBody}`);
                     }
                 } catch (error) {
                     if (attempt === maxRetries - 1) {
@@ -719,7 +822,7 @@ Original User Question: ${userQuery}
         // ====================================================================
 
         /**
-         * Handles FullCalendar event click (show details modal only).
+         * Handles FullCalendar event click (show details modal and conditionally show edit form).
          */
         function handleEventClick(info) {
             const event = info.event;
@@ -729,17 +832,117 @@ Original User Question: ${userQuery}
 
             // Populate Detail Modal
             document.getElementById('detail-subject').textContent = event.title.split(' - ')[0];
-            document.getElementById('detail-teacher').textContent = event.extendedProps.teacher;
+            document.getElementById('detail-teacher').textContent = event.extendedProps.teacherName;
             document.getElementById('detail-room').textContent = event.extendedProps.room;
             document.getElementById('detail-time').textContent = `${event.start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${event.end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} (${event.start.toDateString()})`;
             document.getElementById('detail-program').textContent = event.extendedProps.program;
 
-            // Hide Edit Form permanently
-            document.getElementById('edit-form').classList.add('hidden');
+            const editForm = document.getElementById('edit-form');
+            if (currentRole === 'teacher' || currentRole === 'admin') {
+                // Populate Edit Form fields
+                document.getElementById('edit-id').value = event.id;
+                document.getElementById('edit-subject').value = classData.subject;
+                
+                // Format times for datetime-local input
+                document.getElementById('edit-start').value = classData.start_time.substring(0, 16);
+                document.getElementById('edit-end').value = classData.end_time.substring(0, 16);
+                
+                document.getElementById('edit-room').value = classData.room_id;
+                document.getElementById('edit-teacher').value = classData.teacher_id;
+                
+                editForm.classList.remove('hidden');
+            } else {
+                editForm.classList.add('hidden');
+            }
             
             // Show modal
             document.getElementById('detail-modal').classList.remove('hidden');
             document.getElementById('detail-modal').classList.add('flex');
+        }
+        
+        /**
+         * Handles event drop or resize (drag and drop) from the calendar.
+         */
+        async function handleEventChange(info) {
+            if (!(currentRole === 'teacher' || currentRole === 'admin')) {
+                 // Restore event position if non-admin tries to move it (shouldn't happen if editable=false is set correctly)
+                info.revert();
+                return;
+            }
+
+            const event = info.event;
+            const classId = event.id;
+            const newStart = event.start.toISOString();
+            const newEnd = event.end.toISOString();
+
+            try {
+                const { error } = await supabase
+                    .from('classes')
+                    .update({ start_time: newStart, end_time: newEnd })
+                    .eq('id', classId);
+
+                if (error) throw error;
+                console.log('Class updated successfully via drag/drop.');
+                // Realtime listener handles UI update
+            } catch (error) {
+                console.error('Error updating class schedule:', error.message);
+                // Revert UI change if database update fails
+                info.revert();
+                // Custom modal/message box for error is highly recommended here instead of alert()
+            }
+        }
+
+
+        // Supabase Admin/Teacher Login Handler
+        async function handleSupabaseSignIn(e) {
+            e.preventDefault();
+            const name = document.getElementById('login-name').value.trim();
+            const passkey = document.getElementById('login-passkey').value.trim();
+            const errorEl = document.getElementById('login-error-message');
+            const loginButton = document.getElementById('login-button');
+
+            errorEl.classList.add('hidden');
+            loginButton.disabled = true;
+            loginButton.textContent = 'Logging in...';
+
+            try {
+                const { data, error } = await supabase
+                    .from('profiles')
+                    .select('full_name, role')
+                    .eq('full_name', name)
+                    .eq('passkey', passkey)
+                    .single();
+
+                if (error || !data) {
+                    errorEl.textContent = 'Invalid credentials or user not found.';
+                    errorEl.classList.remove('hidden');
+                    return;
+                }
+
+                currentRole = data.role;
+                currentUsername = data.full_name;
+
+                // Close login modal and update UI
+                document.getElementById('login-modal').classList.add('hidden');
+                document.getElementById('login-modal').classList.remove('flex');
+                updateUserUI();
+                renderCalendar(); // Re-render calendar to enable/disable editing
+
+            } catch (error) {
+                console.error('Supabase Login Error:', error);
+                errorEl.textContent = 'An unexpected error occurred during login.';
+                errorEl.classList.remove('hidden');
+            } finally {
+                loginButton.disabled = false;
+                loginButton.textContent = 'Sign In';
+            }
+        }
+
+        function handleSupabaseSignOut() {
+            currentRole = 'student';
+            currentUsername = 'Kiosk Viewer';
+            updateUserUI();
+            renderCalendar(); // Re-render calendar to disable editing
         }
 
         // Program Tab Click
@@ -752,7 +955,6 @@ Original User Question: ${userQuery}
                 document.querySelectorAll('.program-tab').forEach(btn => {
                     const isSelected = btn.dataset.program === currentProgram;
                     
-                    // Permanent dark theme classes
                     btn.classList.remove('bg-pink-900', 'text-pink-100', 'bg-gray-700', 'text-gray-300', 'hover:bg-pink-800', 'hover:bg-gray-600');
 
                     if (isSelected) {
@@ -789,15 +991,6 @@ Original User Question: ${userQuery}
             document.getElementById('assistant-modal').classList.add('flex');
         });
 
-        // Close Assistant Modal
-        document.getElementById('close-assistant-modal').addEventListener('click', () => {
-            document.getElementById('assistant-modal').classList.add('hidden');
-            document.getElementById('assistant-modal').classList.remove('flex');
-        });
-
-        // Chat Form Submission
-        document.getElementById('chat-form').addEventListener('submit', handleSendMessage);
-
         // Map Toggle Button
         document.getElementById('map-toggle-button').addEventListener('click', () => {
             const calendarView = document.getElementById('calendar-view');
@@ -815,11 +1008,48 @@ Original User Question: ${userQuery}
             }
         });
 
+        // Menu Toggle Button
+        document.getElementById('hamburger-menu').addEventListener('click', () => {
+            document.getElementById('menu-sidebar').classList.add('open');
+        });
+
+        document.getElementById('close-menu').addEventListener('click', () => {
+            document.getElementById('menu-sidebar').classList.remove('open');
+        });
+
+        // Authentication Button (Menu Sidebar)
+        document.getElementById('auth-button').addEventListener('click', () => {
+            if (currentRole === 'teacher' || currentRole === 'admin') {
+                handleSupabaseSignOut();
+            } else {
+                document.getElementById('login-modal').classList.remove('hidden');
+                document.getElementById('login-modal').classList.add('flex');
+            }
+        });
+
         // Close Detail Modal
         document.getElementById('close-detail-modal').addEventListener('click', () => {
             document.getElementById('detail-modal').classList.add('hidden');
             document.getElementById('detail-modal').classList.remove('flex');
         });
+
+        // Close Assistant Modal
+        document.getElementById('close-assistant-modal').addEventListener('click', () => {
+            document.getElementById('assistant-modal').classList.add('hidden');
+            document.getElementById('assistant-modal').classList.remove('flex');
+        });
+        
+        // Close Login Modal
+        document.getElementById('close-login-modal').addEventListener('click', () => {
+            document.getElementById('login-modal').classList.add('hidden');
+            document.getElementById('login-modal').classList.remove('flex');
+        });
+
+        // Chat Form Submission
+        document.getElementById('chat-form').addEventListener('submit', handleSendMessage);
+        
+        // Login Form Submission
+        document.getElementById('login-form').addEventListener('submit', handleSupabaseSignIn);
 
 
         // ====================================================================
@@ -827,11 +1057,23 @@ Original User Question: ${userQuery}
         // ====================================================================
 
         async function init() {
-            // No need for dark mode listener as it's permanently dark.
-
-            // No need to update auth status or sign in
-            document.getElementById('user-status').textContent = 'Kiosk View Mode';
+            // 1. Firebase Auth for Canvas Environment (Keep for general auth environment setup)
+            if (Object.keys(firebaseConfig).length > 0) {
+                fbApp = firebase.initializeApp(firebaseConfig);
+                auth = firebase.getAuth(fbApp);
+                if (initialAuthToken) {
+                    await firebase.signInWithCustomToken(auth, initialAuthToken).catch(e => console.error("Firebase Custom Token Sign-In Failed:", e));
+                } else {
+                    await firebase.signInAnonymously(auth).catch(e => console.error("Firebase Anonymous Sign-In Failed:", e));
+                }
+            } else {
+                console.warn("Firebase config missing. Running without Firebase Auth.");
+            }
             
+            // 2. Initial UI Update (Default to student)
+            updateUserUI(); 
+
+            // 3. Load Data
             await fetchStaticData();
             setupRealtimeListener();
 
