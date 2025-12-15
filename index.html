@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>STEC Kiosk</title>
+    <title>STEC Buddy</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Inter Font -->
@@ -497,7 +497,8 @@
             
             chatHistory.forEach(message => {
                 const isUser = message.role === 'user';
-                const text = message.parts[0].text;
+                // Only use the SHORT user query for display
+                const text = message.parts[0].text; 
                 
                 const messageEl = document.createElement('div');
                 messageEl.className = `flex ${isUser ? 'justify-end' : 'justify-start'}`;
@@ -513,9 +514,7 @@
 
                 // Simple Markdown to HTML conversion for basic formatting (bold/italics)
                 let formattedText = text;
-                // Basic bold
                 formattedText = formattedText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-                // Basic italics
                 formattedText = formattedText.replace(/\*(.*?)\*/g, '<em>$1</em>');
                 
                 bubbleEl.innerHTML = formattedText.replace(/\n/g, '<br>');
@@ -548,12 +547,30 @@
             }
 
 
-            // 1. Add user message to history and UI
+            // 1. Add user message to history and UI (SHORT VERSION)
+            // This is the version shown to the user in the chat window
             chatHistory.push({ role: "user", parts: [{ text: userQuery }] });
             renderChat();
             inputEl.value = '';
 
-            // 2. Disable input and show loading
+            // 2. Prepare context data for the LLM calculation
+            const now = new Date();
+            const scheduleContext = allClasses.map(c => ({
+                grade: c.programs.grade_level,
+                section: c.programs.section,
+                subject: c.subject,
+                startTime: c.start_time,
+                endTime: c.end_time,
+                room: c.rooms.name,
+                teacher: c.teacher.full_name
+            }));
+            const contextData = {
+                currentTime: now.toISOString(),
+                schedule: scheduleContext
+            };
+
+
+            // 3. Disable input and show loading
             sendButton.disabled = true;
             sendButton.textContent = 'Thinking...';
             chatHistoryEl.innerHTML += `
@@ -565,14 +582,16 @@
             chatHistoryEl.scrollTop = chatHistoryEl.scrollHeight;
 
             try {
-                // 3. Call the API
-                const systemInstruction = `You are **STEC-Buddy**, the BCSTEC Kiosk Assistant. Your role is to provide helpful, concise, and friendly information about school schedules, rooms, and general school facts. Be polite and keep answers brief. When appropriate, use Google Search to find current, relevant information. Your primary schedule data is static, so defer to general knowledge or mock information for schedule-related queries.`;
-                const geminiResponse = await sendMessageToGemini(userQuery, systemInstruction);
+                // 4. Define system instruction for schedule calculation
+                const systemInstruction = `You are **STEC-Buddy**, the BCSTEC Kiosk Assistant. You must use the provided current time and schedule data to answer specific questions about the next class or current class for a given grade and section (e.g., Grade 8 Gold). If the data is insufficient or the question is general, answer politely using general knowledge and the Google Search tool. When calculating the next class, only consider classes that occur today or later and whose start time is strictly *after* the provided currentTime.`;
+                
+                // 5. Call the API, passing contextData and the FULL history
+                const geminiResponse = await sendMessageToGemini(userQuery, systemInstruction, contextData, chatHistory);
 
-                // 4. Add model response to history
+                // 6. Add model response to history
                 chatHistory.push({ role: "model", parts: [{ text: geminiResponse.text }] });
                 
-                // 5. Re-render chat
+                // 7. Re-render chat
                 renderChat();
 
             } catch (error) {
@@ -583,7 +602,7 @@
                 });
                 renderChat();
             } finally {
-                // 6. Re-enable input
+                // 8. Re-enable input
                 document.getElementById('loading-indicator')?.remove();
                 sendButton.disabled = false;
                 sendButton.textContent = 'Send';
@@ -592,11 +611,27 @@
 
         /**
          * Sends a message to the Gemini API with exponential backoff.
+         * Injects the schedule context into the last user message of the history payload.
          */
-        async function sendMessageToGemini(userQuery, systemInstruction, maxRetries = 5) {
+        async function sendMessageToGemini(userQuery, systemInstruction, contextData, history, maxRetries = 5) {
+            // 1. Build the dynamic user part containing the context
+            const fullUserQuery = `
+Current Time (ISO): ${contextData.currentTime}
+
+Schedule Context (JSON, ${contextData.schedule.length} entries): ${JSON.stringify(contextData.schedule)}
+
+Original User Question: ${userQuery}
+`;
+
+            // 2. Create the API contents array based on history, but replace the LAST user message with the full context.
+            const apiContents = JSON.parse(JSON.stringify(history)); // Deep copy
+            // The last entry is the user's short query. Replace its content with the full context.
+            apiContents[apiContents.length - 1].parts = [{ text: fullUserQuery }];
+
+
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${GEMINI_API_KEY}`;
             const payload = {
-                contents: chatHistory,
+                contents: apiContents, // Use the context-injected history
                 tools: [{ "google_search": {} }],
                 systemInstruction: {
                     parts: [{ text: systemInstruction }]
