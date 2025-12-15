@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>STEC Buddy</title>
+    <title>STEC Kiosk</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Inter Font -->
@@ -234,6 +234,40 @@
             role: "model",
             parts: [{ text: "Hello! I am **STEC-Buddy**, your helpful Kiosk Assistant. I can answer questions about the school, schedules, and rooms. How can I help you today?" }]
         }];
+
+        // ====================================================================
+        // TIME ZONE HELPER
+        // ====================================================================
+        
+        /**
+         * Gets the current time formatted for the Philippine time zone (Asia/Manila, UTC+8).
+         * This structured string is passed to the LLM for context-aware scheduling.
+         */
+        function getPhCurrentTime() {
+            const options = {
+                timeZone: 'Asia/Manila',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            };
+            // Format the current time explicitly in PH time
+            const formatter = new Intl.DateTimeFormat('en-US', options);
+            const parts = formatter.formatToParts(new Date());
+
+            const year = parts.find(p => p.type === 'year').value;
+            const month = parts.find(p => p.type === 'month').value;
+            const day = parts.find(p => p.type === 'day').value;
+            const hour = parts.find(p => p.type === 'hour').value;
+            const minute = parts.find(p => p.type === 'minute').value;
+            const second = parts.find(p => p.type === 'second').value;
+
+            // Return a structured string for the LLM
+            return `${year}-${month}-${day} ${hour}:${minute}:${second} (PH Time, UTC+8/Asia/Manila)`;
+        }
 
 
         // ====================================================================
@@ -553,19 +587,20 @@
             renderChat();
             inputEl.value = '';
 
-            // 2. Prepare context data for the LLM calculation
-            const now = new Date();
+            // 2. Prepare context data for the LLM calculation, using PH time
+            const nowPhTime = getPhCurrentTime();
             const scheduleContext = allClasses.map(c => ({
                 grade: c.programs.grade_level,
                 section: c.programs.section,
                 subject: c.subject,
-                startTime: c.start_time,
+                // Assuming these database times are local PH times
+                startTime: c.start_time, 
                 endTime: c.end_time,
                 room: c.rooms.name,
                 teacher: c.teacher.full_name
             }));
             const contextData = {
-                currentTime: now.toISOString(),
+                currentTime: nowPhTime, // This is the PH localized string
                 schedule: scheduleContext
             };
 
@@ -583,7 +618,8 @@
 
             try {
                 // 4. Define system instruction for schedule calculation
-                const systemInstruction = `You are **STEC-Buddy**, the BCSTEC Kiosk Assistant. You must use the provided current time and schedule data to answer specific questions about the next class or current class for a given grade and section (e.g., Grade 8 Gold). If the data is insufficient or the question is general, answer politely using general knowledge and the Google Search tool. When calculating the next class, only consider classes that occur today or later and whose start time is strictly *after* the provided currentTime.`;
+                const systemInstruction = `You are **STEC-Buddy**, the BCSTEC Kiosk Assistant. You must use the provided current time and schedule data to answer specific questions about the next class or current class for a given grade and section (e.g., Grade 8 Gold). 
+***IMPORTANT TIME ZONE RULE: All times provided (currentTime and schedule times) are in PH Time (Philippine Standard Time, UTC+8).*** If the data is insufficient or the question is general, answer politely using general knowledge and the Google Search tool. When calculating the next class, only consider classes that occur today or later and whose start time is strictly *after* the provided currentTime.`;
                 
                 // 5. Call the API, passing contextData and the FULL history
                 const geminiResponse = await sendMessageToGemini(userQuery, systemInstruction, contextData, chatHistory);
@@ -616,7 +652,7 @@
         async function sendMessageToGemini(userQuery, systemInstruction, contextData, history, maxRetries = 5) {
             // 1. Build the dynamic user part containing the context
             const fullUserQuery = `
-Current Time (ISO): ${contextData.currentTime}
+Current Time: ${contextData.currentTime}
 
 Schedule Context (JSON, ${contextData.schedule.length} entries): ${JSON.stringify(contextData.schedule)}
 
