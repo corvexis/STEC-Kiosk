@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STEC Kiosk</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter Font -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        /* Kiosk Mode: Fullscreen feel, allow vertical scroll on small screens */
+        html, body, #app { height: 100%; margin: 0; padding: 0; }
+        #app { overflow-y: auto; }
+        /* FullCalendar styling tweaks - Ensure visibility in dark mode */
+        .fc-toolbar-title { 
+            font-size: 1.5rem !important; 
+            font-weight: 800; 
+            color: #ec4899; /* Always visible pink */
+        }
+        .dark .fc-button, .dark .fc-button:hover { 
+            background-color: #4b5563; /* dark gray buttons */
+            border-color: #374151;
+        }
+        .fc-event-title { white-space: normal; }
+        /* Adjust calendar padding for mobile */
+        #calendar { padding: 0.5rem; }
+        @media (min-width: 768px) {
+            #calendar { padding: 1rem; }
+        }
+        #map { height: 100%; width: 100%; border-radius: 0.5rem; }
+    </style>
+
+    <!-- Dark Mode Preference Pre-load Script (prevents FOUC) -->
+    <script>
+        (function() {
+            // Check localStorage for theme preference
+            const theme = localStorage.getItem('theme');
+            // If theme is explicitly set to dark, or if no preference is set and system prefers dark
+            if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            }
+        })();
+    </script>
+
+    <!-- Leaflet CSS for Map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+        crossorigin=""/>
+    <!-- FullCalendar CSS and JS -->
+    <link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/main.min.css' rel='stylesheet' />
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js'></script>
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/locales-all.global.min.js'></script>
+    <!-- Supabase Client (Auth is removed, but core client remains for data fetching) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Leaflet JS for Map -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+        crossorigin=""></script>
+</head>
+<body>
+
+    <div id="app" class="flex flex-col bg-gray-100 dark:bg-gray-900 h-screen transition-colors duration-300">
+
+        <!-- HEADER (Pink and Grey) - Sign-in button removed -->
+        <header class="bg-gray-800 text-white shadow-xl p-4 flex justify-between items-center z-10 sticky top-0">
+            <h1 class="text-xl md:text-3xl font-extrabold tracking-tight text-pink-400">
+                <span id="school-name">ACME School</span> Kiosk
+            </h1>
+            <div class="flex items-center space-x-4">
+                <!-- User Status (Always shows viewer status) -->
+                <span id="user-status" class="text-xs md:text-sm font-semibold rounded-full px-2 py-1 md:px-3 md:py-1 bg-pink-700">
+                    Kiosk View Mode
+                </span>
+                
+                <!-- Dark Mode Toggle Button -->
+                <button id="dark-mode-toggle" class="p-2 rounded-full text-white hover:bg-gray-700 transition duration-300">
+                    <!-- Sun Icon (Light Mode) -->
+                    <svg id="sun-icon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                    <!-- Moon Icon (Dark Mode) -->
+                    <svg id="moon-icon" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- MAIN CONTENT AREA: Stacks vertically on mobile -->
+        <div class="flex-grow flex flex-col md:flex-row overflow-hidden">
+            <!-- SIDEBAR/FILTERS: Full width on mobile, 1/4 width on desktop -->
+            <aside id="filter-sidebar" class="w-full md:w-1/4 md:max-w-xs bg-white dark:bg-gray-800 p-4 md:overflow-y-auto border-r border-gray-200 dark:border-gray-700 shadow-md transition-colors duration-300">
+                <h2 class="text-xl font-bold mb-4 text-pink-600 dark:text-pink-400">Filter Schedule</h2>
+
+                <!-- Program Tabs (Junior/Senior) -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Program:</label>
+                    <div class="flex space-x-2" id="program-tabs">
+                        <!-- Initial states: Junior High is active (pink-100/pink-700), Senior High is inactive (gray-100/gray-700) -->
+                        <button data-program="Junior High" class="program-tab bg-pink-100 text-pink-700 dark:bg-pink-900 dark:text-pink-100 font-semibold py-2 px-4 rounded-lg flex-1 shadow-sm hover:bg-pink-200 dark:hover:bg-pink-800 transition duration-150 text-sm">Junior High</button>
+                        <button data-program="Senior High" class="program-tab bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 font-semibold py-2 px-4 rounded-lg flex-1 shadow-sm hover:bg-gray-200 dark:hover:bg-gray-600 transition duration-150 text-sm">Senior High</button>
+                    </div>
+                </div>
+
+                <!-- Grade Level Filter (Dynamic) -->
+                <div class="mb-4">
+                    <label for="grade-filter" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Grade Level:</label>
+                    <select id="grade-filter" class="w-full p-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-pink-500 focus:border-pink-500 shadow-sm text-sm"></select>
+                </div>
+
+                <!-- Section Filter (Dynamic) -->
+                <div class="mb-4">
+                    <label for="section-filter" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Section:</label>
+                    <select id="section-filter" class="w-full p-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-pink-500 focus:border-pink-500 shadow-sm text-sm"></select>
+                </div>
+
+                <!-- See Schedule Button -->
+                <button id="see-schedule-button"
+                        class="w-full bg-pink-600 text-white font-bold py-3 px-4 rounded-lg shadow-md hover:bg-pink-700 transition duration-300 mt-4 text-sm">
+                    See Schedule
+                </button>
+
+                <!-- Action Button for Admins/Teachers - Permanently Hidden -->
+                <button id="add-schedule-button"
+                        class="hidden w-full bg-green-500 text-white font-bold py-3 px-4 rounded-lg shadow-md hover:bg-green-600 transition duration-300 mt-4 text-sm">
+                    + Add New Class
+                </button>
+
+                <!-- Map View Toggle -->
+                <div class="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <h3 class="text-lg font-bold text-pink-600 dark:text-pink-400 mb-2">Campus Map</h3>
+                    <button id="map-toggle-button"
+                            class="w-full bg-gray-600 text-white font-bold py-3 px-4 rounded-lg shadow-md hover:bg-gray-700 transition duration-300 text-sm">
+                        View Floor Plan
+                    </button>
+                </div>
+
+            </aside>
+
+            <!-- MAIN VIEW (Calendar or Map) -->
+            <main id="main-view-container" class="flex-grow bg-white dark:bg-gray-800 overflow-auto transition-colors duration-300">
+                <!-- Calendar View -->
+                <div id="calendar-view" class="h-full w-full min-h-[500px] md:min-h-0">
+                    <div id='calendar' class="h-full"></div>
+                </div>
+                <!-- Map View (Hidden by default) -->
+                <div id="map-view" class="h-full w-full hidden p-4">
+                    <h2 class="text-xl md:text-2xl font-bold mb-4 text-pink-600 dark:text-pink-400">Floor Plan Hotspots</h2>
+                    <div id="map" class="h-[80vh] md:h-[90%] w-full"></div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- MODAL: Class Detail (Edit form permanently hidden) -->
+    <div id="detail-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 hidden items-center justify-center z-50 p-4">
+        <div class="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-2xl w-full max-w-lg transition-colors duration-300">
+            <h3 id="detail-title" class="text-2xl font-bold mb-4 text-pink-600 dark:text-pink-400">Class Details</h3>
+            <div id="detail-content" class="space-y-3 text-gray-700 dark:text-gray-300">
+                <p><span class="font-medium">Subject:</span> <span id="detail-subject"></span></p>
+                <p><span class="font-medium">Teacher:</span> <span id="detail-teacher"></span></p>
+                <p><span class="font-medium">Room:</span> <span id="detail-room"></span></p>
+                <p><span class="font-medium">Time:</span> <span id="detail-time"></span></p>
+                <p><span class="font-medium">Program:</span> <span id="detail-program"></span></p>
+            </div>
+            <!-- Edit Form is permanently hidden for Kiosk mode -->
+            <form id="edit-form" class="mt-6 space-y-4 hidden">
+                <h4 class="text-xl font-semibold border-t pt-4 text-pink-600 dark:text-pink-400 border-gray-200 dark:border-gray-700">Edit Class (Admin/Teacher)</h4>
+                <input type="hidden" id="edit-id">
+
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">New Subject:</label>
+                <input type="text" id="edit-subject" required class="w-full p-2 border rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-pink-500 focus:border-pink-500">
+
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">New Start Time (YYYY-MM-DD HH:MM):</label>
+                <input type="datetime-local" id="edit-start" required class="w-full p-2 border rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-pink-500 focus:border-pink-500">
+
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">New Room:</label>
+                <select id="edit-room" class="w-full p-2 border rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-pink-500 focus:border-pink-500"></select>
+
+                <div class="flex flex-col space-y-2 md:space-y-0 md:flex-row md:space-x-4">
+                    <button type="submit" class="flex-1 bg-pink-600 text-white py-2 rounded-lg hover:bg-pink-700 transition duration-300">Save Changes</button>
+                    <button id="delete-class-button" type="button" class="flex-1 bg-gray-600 text-white py-2 rounded-lg hover:bg-gray-700 transition duration-300">Delete Class</button>
+                </div>
+            </form>
+
+            <button id="close-detail-modal" class="mt-6 w-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-300 py-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition duration-300">Close</button>
+        </div>
+    </div>
+
+
+    <script type="module">
+        // ====================================================================
+        // SUPABASE CONFIGURATION
+        // ====================================================================
+        const SUPABASE_URL = 'YOUR_SUPABASE_URL_HERE'; 
+        const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY_HERE'; 
+
+        // Check for placeholder
+        if (SUPABASE_URL.startsWith('YOUR')) {
+            console.error("CRITICAL ERROR: Please update SUPABASE_URL and SUPABASE_ANON_KEY in the script.");
+        }
+
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        let calendar = null;
+        let map = null;
+        let allClasses = [];
+        let allRooms = [];
+        let allProfiles = [];
+        // Role is permanently set to student as Kiosk is public
+        const currentRole = 'student'; 
+        let currentProgram = 'Junior High';
+        let currentGrade = null;
+        let currentSection = null;
+
+        // ====================================================================
+        // DARK MODE TOGGLE LOGIC
+        // ====================================================================
+
+        const htmlEl = document.documentElement;
+        const sunIcon = document.getElementById('sun-icon');
+        const moonIcon = document.getElementById('moon-icon');
+        const darkModeToggle = document.getElementById('dark-mode-toggle');
+
+        function updateDarkModeIcons(isDark) {
+            if (isDark) {
+                sunIcon.classList.add('hidden');
+                moonIcon.classList.remove('hidden');
+            } else {
+                sunIcon.classList.remove('hidden');
+                moonIcon.classList.add('hidden');
+            }
+        }
+
+        function toggleDarkMode() {
+            if (htmlEl.classList.contains('dark')) {
+                // Switch to light mode
+                htmlEl.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+                updateDarkModeIcons(false);
+            } else {
+                // Switch to dark mode
+                htmlEl.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+                updateDarkModeIcons(true);
+            }
+        }
+
+        // Initial setup for icons (check based on pre-load script result)
+        updateDarkModeIcons(htmlEl.classList.contains('dark'));
+
+
+        // ====================================================================
+        // DATA FETCHING AND REAL-TIME SUBSCRIPTIONS
+        // Kiosk mode fetches data for viewing only.
+        // ====================================================================
+
+        /**
+         * Fetches all static data (Rooms and Profiles)
+         */
+        async function fetchStaticData() {
+            try {
+                const { data: rooms, error: roomError } = await supabase.from('rooms').select('*');
+                if (roomError) throw roomError;
+                allRooms = rooms;
+                console.log('Fetched Rooms:', allRooms.length);
+                initializeMap();
+
+                const { data: profiles, error: profileError } = await supabase.from('profiles').select('id, full_name, role');
+                if (profileError) throw profileError;
+                allProfiles = profiles;
+                console.log('Fetched Profiles:', allProfiles.length);
+
+            } catch (error) {
+                console.error('Error fetching static data:', error.message);
+            }
+        }
+
+        /**
+         * Sets up the Realtime listener for class schedules.
+         */
+        function setupRealtimeListener() {
+            // Subscribe to changes in the classes table
+            supabase
+                .channel('classes_changes')
+                .on(
+                    'postgres_changes',
+                    { event: '*', schema: 'public', table: 'classes' },
+                    (payload) => {
+                        console.log('Realtime change received:', payload);
+                        fetchAndRenderClasses(); // Refetch all classes on any change
+                    }
+                )
+                .subscribe();
+
+            // Initial fetch
+            fetchAndRenderClasses();
+        }
+
+        /**
+         * Fetches all class schedules and updates the calendar.
+         */
+        async function fetchAndRenderClasses() {
+            try {
+                // Fetch classes and join necessary profile and room data
+                const { data, error } = await supabase
+                    .from('classes')
+                    .select(`
+                        id, subject, start_time, end_time, room_id,
+                        programs(name, grade_level, section),
+                        rooms(id, name, floor, map_coords),
+                        teacher:profiles(full_name)
+                    `);
+
+                if (error) throw error;
+                allClasses = data;
+                console.log('Fetched Classes:', allClasses.length);
+                renderFilters();
+                // We call renderCalendar here only to ensure the calendar exists initially, 
+                // but subsequent rendering will rely on the "See Schedule" button click.
+                if (!calendar) {
+                    renderCalendar();
+                }
+
+            } catch (error) {
+                console.error('Error fetching classes:', error.message);
+                if (error.code === 'PGRST116') {
+                    allClasses = [];
+                    if (!calendar) renderCalendar();
+                }
+            }
+        }
+
+        // ====================================================================
+        // UI RENDERING FUNCTIONS
+        // ====================================================================
+
+        /**
+         * Renders filter dropdowns based on current data.
+         */
+        function renderFilters() {
+            let currentProgramData = allClasses.filter(c => c.programs.name === currentProgram);
+
+            // 1. Grade Filter
+            const grades = [...new Set(currentProgramData.map(c => c.programs.grade_level))].sort((a, b) => a - b);
+            const gradeFilterEl = document.getElementById('grade-filter');
+            gradeFilterEl.innerHTML = `<option value="">All Grades</option>`;
+            grades.forEach(grade => {
+                gradeFilterEl.innerHTML += `<option value="${grade}" ${grade == currentGrade ? 'selected' : ''}>Grade ${grade}</option>`;
+            });
+
+
+            // Filter data by current grade if set, for populating section filters
+            if (currentGrade) {
+                currentProgramData = currentProgramData.filter(c => c.programs.grade_level == currentGrade);
+            }
+
+            // 2. Section Filter (Dynamically filtered by Program and Grade)
+            const sectionFilterEl = document.getElementById('section-filter');
+            const sections = [...new Set(currentProgramData.map(c => c.programs.section))].sort();
+
+            sectionFilterEl.innerHTML = `<option value="">All Sections</option>`;
+            sections.forEach(section => {
+                sectionFilterEl.innerHTML += `<option value="${section}" ${section === currentSection ? 'selected' : ''}>${section}</option>`;
+            });
+        }
+
+        /**
+         * Renders or re-renders the FullCalendar view based on current filters.
+         */
+        function renderCalendar() {
+            const calendarEl = document.getElementById('calendar');
+
+            // 1. Apply Filters
+            const filteredClasses = allClasses.filter(c => {
+                const programMatch = c.programs.name === currentProgram;
+                // Loose comparison == is used as grade_level might be number in data
+                const gradeMatch = !currentGrade || c.programs.grade_level == currentGrade; 
+                const sectionMatch = !currentSection || c.programs.section === currentSection;
+
+                return programMatch && gradeMatch && sectionMatch;
+            });
+
+            // 2. Map data to FullCalendar events
+            const events = filteredClasses.map(c => ({
+                id: c.id,
+                title: `${c.subject} - ${c.rooms.name}`,
+                start: c.start_time,
+                end: c.end_time,
+                allDay: false,
+                extendedProps: {
+                    program: `${c.programs.name} G${c.programs.grade_level} Sec ${c.programs.section}`,
+                    teacher: c.teacher.full_name,
+                    room: c.rooms.name
+                },
+                // Pink/Grey Theme Colors
+                backgroundColor: c.programs.name === 'Junior High' ? '#ec4899' : '#6b7280', // Pink-500 or Gray-500
+                borderColor: c.programs.name === 'Junior High' ? '#be185d' : '#374151' // Pink-700 or Gray-700
+            }));
+
+            // 3. Initialize/Update Calendar
+            if (!calendar) {
+                // Kiosk mode: editable is false, selectable is false
+                calendar = new FullCalendar.Calendar(calendarEl, {
+                    initialView: 'timeGridWeek',
+                    headerToolbar: {
+                        left: 'prev,next today',
+                        center: 'title',
+                        right: 'timeGridDay,timeGridWeek,dayGridMonth'
+                    },
+                    events: events,
+                    nowIndicator: true,
+                    editable: false, 
+                    selectable: false,
+                    slotMinTime: '07:00:00',
+                    slotMaxTime: '18:00:00',
+                    eventClick: handleEventClick,
+                    // Event drop/resize handlers are removed as editable is false
+                });
+                calendar.render();
+            } else {
+                calendar.setOption('events', events);
+                calendar.refetchEvents();
+            }
+        }
+
+        /**
+         * Initializes the Leaflet map for the floor plan.
+         */
+        function initializeMap() {
+            if (map) return;
+
+            // Use a placeholder image for the floor plan
+            const floorPlanImageUrl = 'https://placehold.co/1000x800/222222/cccccc?text=SCHOOL+FLOOR+PLAN';
+            const imageBounds = [[-800, 0], [0, 1000]]; // Define map bounds for the image (0,0 is top-left)
+
+            map = L.map('map', {
+                crs: L.CRS.Simple,
+                minZoom: -2,
+                maxZoom: 2,
+                center: [-400, 500], // Center of the image
+                zoom: 0,
+                maxBounds: imageBounds,
+                maxBoundsViscosity: 1.0
+            });
+
+            L.imageOverlay(floorPlanImageUrl, imageBounds).addTo(map);
+
+            // Add room markers (hotspots)
+            allRooms.forEach(room => {
+                // Ensure room has map coordinates for Leaflet
+                if (room.map_coords && room.map_coords.lat && room.map_coords.lng) {
+                    const marker = L.marker([room.map_coords.lat, room.map_coords.lng]).addTo(map);
+
+                    // Find classes currently happening in this room
+                    const now = new Date();
+                    const currentClasses = allClasses.filter(c => {
+                        const start = new Date(c.start_time);
+                        const end = new Date(c.end_time);
+                        const dayOfWeek = start.getDay(); // 0=Sun, 1=Mon...
+                        return c.room_id === room.id && now >= start && now <= end && now.getDay() === dayOfWeek;
+                    });
+
+                    let popupContent = `<strong>${room.name} (${room.building} - Floor ${room.floor})</strong><br>`;
+
+                    if (currentClasses.length > 0) {
+                        popupContent += `<hr class="my-1"><strong>CURRENTLY:</strong><br>`;
+                        currentClasses.forEach(c => {
+                             // FIX: Use the teacher name from the joined object (c.teacher.full_name) 
+                             // instead of trying to find it in allProfiles using a missing ID (c.teacher_id).
+                             const teacherName = c.teacher ? c.teacher.full_name : 'N/A';
+                             popupContent += `<div>${c.subject} (G${c.programs.grade_level}) - ${teacherName}</div>`;
+                        });
+                    } else {
+                        popupContent += `<hr class="my-1"><span class="text-green-600">Room is currently Free.</span>`;
+                    }
+
+                    marker.bindPopup(popupContent).openPopup();
+                } else {
+                    console.warn(`Room ${room.name} is missing map coordinates.`);
+                }
+            });
+            map.fitBounds(imageBounds); // Zoom to fit the image
+        }
+
+        // ====================================================================
+        // EVENT HANDLERS
+        // ====================================================================
+
+        /**
+         * Handles FullCalendar event click (show details modal only).
+         */
+        function handleEventClick(info) {
+            const event = info.event;
+            const classData = allClasses.find(c => c.id === event.id);
+
+            if (!classData) return;
+
+            // Populate Detail Modal
+            document.getElementById('detail-subject').textContent = event.title.split(' - ')[0];
+            document.getElementById('detail-teacher').textContent = event.extendedProps.teacher;
+            document.getElementById('detail-room').textContent = event.extendedProps.room;
+            document.getElementById('detail-time').textContent = `${event.start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${event.end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} (${event.start.toDateString()})`;
+            document.getElementById('detail-program').textContent = event.extendedProps.program;
+
+            // Hide Edit Form permanently
+            document.getElementById('edit-form').classList.add('hidden');
+            
+            // Show modal
+            document.getElementById('detail-modal').classList.remove('hidden');
+            document.getElementById('detail-modal').classList.add('flex');
+        }
+
+        // Program Tab Click
+        document.querySelectorAll('.program-tab').forEach(button => {
+            button.addEventListener('click', (e) => {
+                currentProgram = e.target.dataset.program;
+                currentGrade = null;
+                currentSection = null;
+                
+                document.querySelectorAll('.program-tab').forEach(btn => {
+                    const isSelected = btn.dataset.program === currentProgram;
+                    
+                    // Remove all existing color classes for light/dark
+                    btn.classList.remove('bg-pink-100', 'text-pink-700', 'dark:bg-pink-900', 'dark:text-pink-100', 
+                                         'bg-gray-100', 'text-gray-700', 'dark:bg-gray-700', 'dark:text-gray-300');
+
+                    if (isSelected) {
+                        btn.classList.add('bg-pink-100', 'text-pink-700', 'dark:bg-pink-900', 'dark:text-pink-100');
+                    } else {
+                        btn.classList.add('bg-gray-100', 'text-gray-700', 'dark:bg-gray-700', 'dark:text-gray-300');
+                    }
+                });
+                renderFilters();
+            });
+        });
+
+        // Grade Filter Change
+        document.getElementById('grade-filter').addEventListener('change', (e) => {
+            currentGrade = e.target.value || null;
+            currentSection = null;
+            renderFilters();
+        });
+        
+        // Section Filter Change
+        document.getElementById('section-filter').addEventListener('change', (e) => {
+            currentSection = e.target.value || null;
+        });
+
+        // See Schedule Button Click
+        document.getElementById('see-schedule-button').addEventListener('click', () => {
+            renderCalendar();
+        });
+
+        // Map Toggle Button
+        document.getElementById('map-toggle-button').addEventListener('click', () => {
+            const calendarView = document.getElementById('calendar-view');
+            const mapView = document.getElementById('map-view');
+
+            if (mapView.classList.contains('hidden')) {
+                calendarView.classList.add('hidden');
+                mapView.classList.remove('hidden');
+                document.getElementById('map-toggle-button').textContent = 'View Schedule';
+                if (map) map.invalidateSize();
+            } else {
+                mapView.classList.add('hidden');
+                calendarView.classList.remove('hidden');
+                document.getElementById('map-toggle-button').textContent = 'View Floor Plan';
+            }
+        });
+
+        // Close Detail Modal
+        document.getElementById('close-detail-modal').addEventListener('click', () => {
+            document.getElementById('detail-modal').classList.add('hidden');
+            document.getElementById('detail-modal').classList.remove('flex');
+        });
+
+
+        // ====================================================================
+        // INITIALIZATION
+        // ====================================================================
+
+        async function init() {
+            // FIX: Attach dark mode listener here to ensure the DOM is fully loaded.
+            darkModeToggle.addEventListener('click', toggleDarkMode); 
+
+            // No need to update auth status or sign in
+            document.getElementById('user-status').textContent = 'Kiosk View Mode';
+            
+            await fetchStaticData();
+            setupRealtimeListener();
+
+            // Set initial colors for program tabs
+            document.querySelector('.program-tab[data-program="Junior High"]').classList.add('bg-pink-100', 'text-pink-700', 'dark:bg-pink-900', 'dark:text-pink-100');
+            document.querySelector('.program-tab[data-program="Senior High"]').classList.add('bg-gray-100', 'text-gray-700', 'dark:bg-gray-700', 'dark:text-gray-300');
+        }
+
+        window.onload = init;
+
+    </script>
+</body>
+</html>
