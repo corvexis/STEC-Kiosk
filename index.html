@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>School Kiosk: Real-Time Schedules</title>
+    <title>STEC Kiosk</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Inter Font -->
@@ -122,11 +122,11 @@
 
             </aside>
 
-            <!-- MAIN VIEW (Calendar or Map) - Permanent dark theme applied -->
-            <main id="main-view-container" class="flex-grow bg-gray-800 overflow-auto transition-colors duration-300">
-                <!-- Calendar View -->
-                <div id="calendar-view" class="h-full w-full min-h-[500px] md:min-h-0">
-                    <div id='calendar' class="h-full"></div>
+            <!-- MAIN VIEW (Calendar or Map) - FIX: Added flex flex-col and changed overflow-auto to overflow-hidden -->
+            <main id="main-view-container" class="flex-grow flex flex-col bg-gray-800 overflow-hidden transition-colors duration-300">
+                <!-- Calendar View - FIX: Changed h-full to flex-grow to ensure it takes remaining vertical space -->
+                <div id="calendar-view" class="flex-grow w-full min-h-[500px] md:min-h-0">
+                    <div id='calendar' class="h-full w-full"></div>
                 </div>
                 <!-- Map View (Hidden by default) -->
                 <div id="map-view" class="h-full w-full hidden p-4">
@@ -409,6 +409,8 @@
                     slotMinTime: '07:00:00',
                     slotMaxTime: '18:00:00',
                     eventClick: handleEventClick,
+                    // FIX: Ensure height is defined for the calendar to load correctly in a flex container
+                    height: '100%', 
                     // Event drop/resize handlers are removed as editable is false
                 });
                 calendar.render();
@@ -576,6 +578,7 @@
 
         /**
          * Sends a message to the Gemini API with exponential backoff.
+         * Includes improved error logging for better diagnostics.
          */
         async function sendMessageToGemini(userQuery, systemInstruction, maxRetries = 5) {
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${GEMINI_API_KEY}`;
@@ -600,7 +603,9 @@
                         if (text) {
                             return { text };
                         } else {
-                            throw new Error("Empty response from API.");
+                            // Log when the API returns 200 but no text content (unexpected)
+                            console.error(`Attempt ${attempt + 1}: API call successful but returned no text content. Full result:`, result);
+                            throw new Error("API response successful but content was empty.");
                         }
                     } else if (response.status === 429 && attempt < maxRetries - 1) {
                         // Rate limit error, retry with exponential backoff
@@ -608,6 +613,9 @@
                         await new Promise(resolve => setTimeout(resolve, delay));
                         continue;
                     } else {
+                        // Log other non-success status codes
+                        const errorBody = await response.text();
+                        console.error(`Attempt ${attempt + 1}: API call failed with status: ${response.status}. Response Body:`, errorBody);
                         throw new Error(`API call failed with status: ${response.status}`);
                     }
                 } catch (error) {
