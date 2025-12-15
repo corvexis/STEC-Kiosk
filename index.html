@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>STEC Kiosk</title>
+    <title>School Kiosk: Real-Time Schedules</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Inter Font -->
@@ -99,6 +99,12 @@
                     See Schedule
                 </button>
 
+                <!-- Ask Assistant Button (UPDATED NAME) -->
+                <button id="ask-assistant-button"
+                        class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg shadow-md hover:bg-blue-700 transition duration-300 mt-4 text-sm">
+                    Ask STEC-Buddy (AI)
+                </button>
+
                 <!-- Action Button for Admins/Teachers - Permanently Hidden -->
                 <button id="add-schedule-button"
                         class="hidden w-full bg-green-500 text-white font-bold py-3 px-4 rounded-lg shadow-md hover:bg-green-600 transition duration-300 mt-4 text-sm">
@@ -165,6 +171,30 @@
             <button id="close-detail-modal" class="mt-6 w-full bg-gray-700 text-gray-300 py-2 rounded-lg hover:bg-gray-600 transition duration-300">Close</button>
         </div>
     </div>
+    
+    <!-- MODAL: Assistant Chat (NEW NAME: STEC-Buddy) -->
+    <div id="assistant-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 hidden items-center justify-center z-50 p-4">
+        <div class="bg-gray-800 p-8 rounded-xl shadow-2xl w-full max-w-lg transition-colors duration-300 flex flex-col h-5/6">
+            <h3 class="text-2xl font-bold mb-4 text-blue-400 border-b border-gray-700 pb-2">STEC-Buddy: Your Kiosk Assistant</h3>
+            
+            <!-- Chat History Container -->
+            <div id="chat-history" class="flex-grow overflow-y-auto space-y-4 mb-4 pr-2">
+                <!-- Initial Welcome Message will be rendered here -->
+            </div>
+            
+            <!-- Input and Send Button -->
+            <form id="chat-form" class="flex space-x-3">
+                <input type="text" id="chat-input" placeholder="Ask a question..." required
+                       class="flex-grow p-3 border border-gray-600 bg-gray-700 text-white rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm">
+                <button type="submit" id="chat-send-button"
+                        class="bg-blue-600 text-white font-bold py-3 px-4 rounded-lg shadow-md hover:bg-blue-700 transition duration-300 flex-shrink-0 disabled:bg-gray-500">
+                    Send
+                </button>
+            </form>
+
+            <button id="close-assistant-modal" class="mt-6 w-full bg-gray-700 text-gray-300 py-2 rounded-lg hover:bg-gray-600 transition duration-300">Close</button>
+        </div>
+    </div>
 
 
     <script type="module">
@@ -191,6 +221,13 @@
         let currentProgram = 'Junior High';
         let currentGrade = null;
         let currentSection = null;
+        
+        // Gemini API Configuration (NEW)
+        const GEMINI_API_KEY = ""; // Key is provided by Canvas runtime
+        let chatHistory = [{
+            role: "model",
+            parts: [{ text: "Hello! I am **STEC-Buddy**, your helpful Kiosk Assistant. I can answer questions about the school, schedules, and rooms. How can I help you today?" }]
+        }];
 
 
         // ====================================================================
@@ -440,6 +477,152 @@
         }
 
         // ====================================================================
+        // GEMINI ASSISTANT FUNCTIONS
+        // ====================================================================
+
+        /**
+         * Renders the chat history into the modal.
+         */
+        function renderChat() {
+            const chatHistoryEl = document.getElementById('chat-history');
+            chatHistoryEl.innerHTML = '';
+            
+            chatHistory.forEach(message => {
+                const isUser = message.role === 'user';
+                const text = message.parts[0].text;
+                
+                const messageEl = document.createElement('div');
+                messageEl.className = `flex ${isUser ? 'justify-end' : 'justify-start'}`;
+                
+                const bubbleEl = document.createElement('div');
+                bubbleEl.className = `p-3 rounded-xl max-w-[80%] shadow-lg text-sm`;
+
+                if (isUser) {
+                    bubbleEl.className += ' bg-pink-600 text-white rounded-br-none';
+                } else {
+                    bubbleEl.className += ' bg-blue-900 text-blue-100 rounded-bl-none';
+                }
+
+                // Simple Markdown to HTML conversion for basic formatting (bold/italics)
+                let formattedText = text;
+                // Basic bold
+                formattedText = formattedText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                // Basic italics
+                formattedText = formattedText.replace(/\*(.*?)\*/g, '<em>$1</em>');
+                
+                bubbleEl.innerHTML = formattedText.replace(/\n/g, '<br>');
+
+                messageEl.appendChild(bubbleEl);
+                chatHistoryEl.appendChild(messageEl);
+            });
+            
+            // Scroll to the bottom
+            chatHistoryEl.scrollTop = chatHistoryEl.scrollHeight;
+        }
+
+        /**
+         * Handles sending a message, updates history, and calls the Gemini API.
+         */
+        async function handleSendMessage(e) {
+            e.preventDefault();
+            const inputEl = document.getElementById('chat-input');
+            const sendButton = document.getElementById('chat-send-button');
+            const chatHistoryEl = document.getElementById('chat-history');
+            const userQuery = inputEl.value.trim();
+
+            if (!userQuery) return;
+
+            // 1. Add user message to history and UI
+            chatHistory.push({ role: "user", parts: [{ text: userQuery }] });
+            renderChat();
+            inputEl.value = '';
+
+            // 2. Disable input and show loading
+            sendButton.disabled = true;
+            sendButton.textContent = 'Thinking...';
+            chatHistoryEl.innerHTML += `
+                <div id="loading-indicator" class="flex justify-start">
+                    <div class="bg-blue-900 text-blue-100 p-3 rounded-xl rounded-bl-none max-w-[80%] shadow-lg text-sm italic opacity-70">
+                        STEC-Buddy is typing...
+                    </div>
+                </div>`;
+            chatHistoryEl.scrollTop = chatHistoryEl.scrollHeight;
+
+            try {
+                // 3. Call the API
+                const systemInstruction = `You are **STEC-Buddy**, the BCSTEC Kiosk Assistant. Your role is to provide helpful, concise, and friendly information about school schedules, rooms, and general school facts. Be polite and keep answers brief. You do not have access to real-time data, so you must answer based on general knowledge or mock information about a typical school environment.`;
+                const geminiResponse = await sendMessageToGemini(userQuery, systemInstruction);
+
+                // 4. Add model response to history
+                chatHistory.push({ role: "model", parts: [{ text: geminiResponse.text }] });
+                
+                // 5. Re-render chat
+                renderChat();
+
+            } catch (error) {
+                console.error('Gemini API Error:', error);
+                chatHistory.push({ 
+                    role: "model", 
+                    parts: [{ text: "Sorry, I encountered an error while processing your request. Please try again." }] 
+                });
+                renderChat();
+            } finally {
+                // 6. Re-enable input
+                document.getElementById('loading-indicator')?.remove();
+                sendButton.disabled = false;
+                sendButton.textContent = 'Send';
+            }
+        }
+
+        /**
+         * Sends a message to the Gemini API with exponential backoff.
+         */
+        async function sendMessageToGemini(userQuery, systemInstruction, maxRetries = 5) {
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${GEMINI_API_KEY}`;
+            const payload = {
+                contents: chatHistory,
+                systemInstruction: {
+                    parts: [{ text: systemInstruction }]
+                }
+            };
+            
+            for (let attempt = 0; attempt < maxRetries; attempt++) {
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (response.ok) {
+                        const result = await response.json();
+                        const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                        if (text) {
+                            return { text };
+                        } else {
+                            throw new Error("Empty response from API.");
+                        }
+                    } else if (response.status === 429 && attempt < maxRetries - 1) {
+                        // Rate limit error, retry with exponential backoff
+                        const delay = Math.pow(2, attempt) * 1000;
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                        continue;
+                    } else {
+                        throw new Error(`API call failed with status: ${response.status}`);
+                    }
+                } catch (error) {
+                    if (attempt === maxRetries - 1) {
+                        throw error;
+                    }
+                    const delay = Math.pow(2, attempt) * 1000;
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                }
+            }
+            throw new Error("Failed to get response from Gemini API after multiple retries.");
+        }
+
+
+        // ====================================================================
         // EVENT HANDLERS
         // ====================================================================
 
@@ -506,6 +689,22 @@
         document.getElementById('see-schedule-button').addEventListener('click', () => {
             renderCalendar();
         });
+
+        // Assistant Button Click
+        document.getElementById('ask-assistant-button').addEventListener('click', () => {
+            renderChat();
+            document.getElementById('assistant-modal').classList.remove('hidden');
+            document.getElementById('assistant-modal').classList.add('flex');
+        });
+
+        // Close Assistant Modal
+        document.getElementById('close-assistant-modal').addEventListener('click', () => {
+            document.getElementById('assistant-modal').classList.add('hidden');
+            document.getElementById('assistant-modal').classList.remove('flex');
+        });
+
+        // Chat Form Submission
+        document.getElementById('chat-form').addEventListener('submit', handleSendMessage);
 
         // Map Toggle Button
         document.getElementById('map-toggle-button').addEventListener('click', () => {
