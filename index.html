@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -19,9 +19,11 @@
             font-weight: 800; 
             color: #ec4899; /* Always visible pink */
         }
-        .dark .fc-button, .dark .fc-button:hover { 
+        /* Enforce dark style for calendar buttons */
+        .fc-button, .fc-button:hover { 
             background-color: #4b5563; /* dark gray buttons */
             border-color: #374151;
+            color: #d1d5db; /* light text */
         }
         .fc-event-title { white-space: normal; }
         /* Adjust calendar padding for mobile */
@@ -32,18 +34,6 @@
         #map { height: 100%; width: 100%; border-radius: 0.5rem; }
     </style>
 
-    <!-- Dark Mode Preference Pre-load Script (prevents FOUC) -->
-    <script>
-        (function() {
-            // Check localStorage for theme preference
-            const theme = localStorage.getItem('theme');
-            // If theme is explicitly set to dark, or if no preference is set and system prefers dark
-            if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                document.documentElement.classList.add('dark');
-            }
-        })();
-    </script>
-
     <!-- Leaflet CSS for Map -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
         integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
@@ -52,7 +42,7 @@
     <link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/main.min.css' rel='stylesheet' />
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js'></script>
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/locales-all.global.min.js'></script>
-    <!-- Supabase Client (Auth is removed, but core client remains for data fetching) -->
+    <!-- Supabase Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <!-- Leaflet JS for Map -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
@@ -61,55 +51,46 @@
 </head>
 <body>
 
-    <div id="app" class="flex flex-col bg-gray-100 dark:bg-gray-900 h-screen transition-colors duration-300">
+    <!-- Removed dark:bg-gray-900, using it as the default -->
+    <div id="app" class="flex flex-col bg-gray-900 h-screen transition-colors duration-300">
 
-        <!-- HEADER (Pink and Grey) - Sign-in button removed -->
+        <!-- HEADER (Pink and Grey) - Sign-in button and dark mode toggle removed -->
         <header class="bg-gray-800 text-white shadow-xl p-4 flex justify-between items-center z-10 sticky top-0">
             <h1 class="text-xl md:text-3xl font-extrabold tracking-tight text-pink-400">
                 <span id="school-name">BCSTEC</span> Kiosk
             </h1>
-            <div class="flex items-center space-x-4">
-                <!-- User Status (Always shows viewer status) -->
-                <span id="user-status" class="text-xs md:text-sm font-semibold rounded-full px-2 py-1 md:px-3 md:py-1 bg-pink-700">
-                    Kiosk View Mode
-                </span>
-                
-                <!-- Dark Mode Toggle Button -->
-                <button id="dark-mode-toggle" class="p-2 rounded-full text-white hover:bg-gray-700 transition duration-300">
-                    <!-- Sun Icon (Light Mode) -->
-                    <svg id="sun-icon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
-                    <!-- Moon Icon (Dark Mode) -->
-                    <svg id="moon-icon" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
-                </button>
-            </div>
+            <!-- User Status (Always shows viewer status) -->
+            <span id="user-status" class="text-xs md:text-sm font-semibold rounded-full px-2 py-1 md:px-3 md:py-1 bg-pink-700">
+                Kiosk View Mode
+            </span>
         </header>
 
         <!-- MAIN CONTENT AREA: Stacks vertically on mobile -->
         <div class="flex-grow flex flex-col md:flex-row overflow-hidden">
-            <!-- SIDEBAR/FILTERS: Full width on mobile, 1/4 width on desktop -->
-            <aside id="filter-sidebar" class="w-full md:w-1/4 md:max-w-xs bg-white dark:bg-gray-800 p-4 md:overflow-y-auto border-r border-gray-200 dark:border-gray-700 shadow-md transition-colors duration-300">
-                <h2 class="text-xl font-bold mb-4 text-pink-600 dark:text-pink-400">Filter Schedule</h2>
+            <!-- SIDEBAR/FILTERS: Permanent dark theme applied -->
+            <aside id="filter-sidebar" class="w-full md:w-1/4 md:max-w-xs bg-gray-800 p-4 md:overflow-y-auto border-r border-gray-700 shadow-md transition-colors duration-300">
+                <h2 class="text-xl font-bold mb-4 text-pink-400">Filter Schedule</h2>
 
                 <!-- Program Tabs (Junior/Senior) -->
                 <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Program:</label>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Program:</label>
                     <div class="flex space-x-2" id="program-tabs">
-                        <!-- Initial states: Junior High is active (pink-100/pink-700), Senior High is inactive (gray-100/gray-700) -->
-                        <button data-program="Junior High" class="program-tab bg-pink-100 text-pink-700 dark:bg-pink-900 dark:text-pink-100 font-semibold py-2 px-4 rounded-lg flex-1 shadow-sm hover:bg-pink-200 dark:hover:bg-pink-800 transition duration-150 text-sm">Junior High</button>
-                        <button data-program="Senior High" class="program-tab bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 font-semibold py-2 px-4 rounded-lg flex-1 shadow-sm hover:bg-gray-200 dark:hover:bg-gray-600 transition duration-150 text-sm">Senior High</button>
+                        <!-- Classes adjusted to permanent dark state -->
+                        <button data-program="Junior High" class="program-tab bg-pink-900 text-pink-100 font-semibold py-2 px-4 rounded-lg flex-1 shadow-sm hover:bg-pink-800 transition duration-150 text-sm">Junior High</button>
+                        <button data-program="Senior High" class="program-tab bg-gray-700 text-gray-300 font-semibold py-2 px-4 rounded-lg flex-1 shadow-sm hover:bg-gray-600 transition duration-150 text-sm">Senior High</button>
                     </div>
                 </div>
 
                 <!-- Grade Level Filter (Dynamic) -->
                 <div class="mb-4">
-                    <label for="grade-filter" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Grade Level:</label>
-                    <select id="grade-filter" class="w-full p-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-pink-500 focus:border-pink-500 shadow-sm text-sm"></select>
+                    <label for="grade-filter" class="block text-sm font-medium text-gray-300 mb-2">Grade Level:</label>
+                    <select id="grade-filter" class="w-full p-2 border border-gray-600 bg-gray-700 text-white rounded-lg focus:ring-pink-500 focus:border-pink-500 shadow-sm text-sm"></select>
                 </div>
 
                 <!-- Section Filter (Dynamic) -->
                 <div class="mb-4">
-                    <label for="section-filter" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Section:</label>
-                    <select id="section-filter" class="w-full p-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-pink-500 focus:border-pink-500 shadow-sm text-sm"></select>
+                    <label for="section-filter" class="block text-sm font-medium text-gray-300 mb-2">Section:</label>
+                    <select id="section-filter" class="w-full p-2 border border-gray-600 bg-gray-700 text-white rounded-lg focus:ring-pink-500 focus:border-pink-500 shadow-sm text-sm"></select>
                 </div>
 
                 <!-- See Schedule Button -->
@@ -125,8 +106,8 @@
                 </button>
 
                 <!-- Map View Toggle -->
-                <div class="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
-                    <h3 class="text-lg font-bold text-pink-600 dark:text-pink-400 mb-2">Campus Map</h3>
+                <div class="mt-6 pt-4 border-t border-gray-700">
+                    <h3 class="text-lg font-bold text-pink-400 mb-2">Campus Map</h3>
                     <button id="map-toggle-button"
                             class="w-full bg-gray-600 text-white font-bold py-3 px-4 rounded-lg shadow-md hover:bg-gray-700 transition duration-300 text-sm">
                         View Floor Plan
@@ -135,26 +116,26 @@
 
             </aside>
 
-            <!-- MAIN VIEW (Calendar or Map) -->
-            <main id="main-view-container" class="flex-grow bg-white dark:bg-gray-800 overflow-auto transition-colors duration-300">
+            <!-- MAIN VIEW (Calendar or Map) - Permanent dark theme applied -->
+            <main id="main-view-container" class="flex-grow bg-gray-800 overflow-auto transition-colors duration-300">
                 <!-- Calendar View -->
                 <div id="calendar-view" class="h-full w-full min-h-[500px] md:min-h-0">
                     <div id='calendar' class="h-full"></div>
                 </div>
                 <!-- Map View (Hidden by default) -->
                 <div id="map-view" class="h-full w-full hidden p-4">
-                    <h2 class="text-xl md:text-2xl font-bold mb-4 text-pink-600 dark:text-pink-400">Floor Plan Hotspots</h2>
+                    <h2 class="text-xl md:text-2xl font-bold mb-4 text-pink-400">Floor Plan Hotspots</h2>
                     <div id="map" class="h-[80vh] md:h-[90%] w-full"></div>
                 </div>
             </main>
         </div>
     </div>
 
-    <!-- MODAL: Class Detail (Edit form permanently hidden) -->
+    <!-- MODAL: Class Detail (Edit form permanently hidden) - Permanent dark theme applied -->
     <div id="detail-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 hidden items-center justify-center z-50 p-4">
-        <div class="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-2xl w-full max-w-lg transition-colors duration-300">
-            <h3 id="detail-title" class="text-2xl font-bold mb-4 text-pink-600 dark:text-pink-400">Class Details</h3>
-            <div id="detail-content" class="space-y-3 text-gray-700 dark:text-gray-300">
+        <div class="bg-gray-800 p-8 rounded-xl shadow-2xl w-full max-w-lg transition-colors duration-300">
+            <h3 id="detail-title" class="text-2xl font-bold mb-4 text-pink-400">Class Details</h3>
+            <div id="detail-content" class="space-y-3 text-gray-300">
                 <p><span class="font-medium">Subject:</span> <span id="detail-subject"></span></p>
                 <p><span class="font-medium">Teacher:</span> <span id="detail-teacher"></span></p>
                 <p><span class="font-medium">Room:</span> <span id="detail-room"></span></p>
@@ -163,17 +144,17 @@
             </div>
             <!-- Edit Form is permanently hidden for Kiosk mode -->
             <form id="edit-form" class="mt-6 space-y-4 hidden">
-                <h4 class="text-xl font-semibold border-t pt-4 text-pink-600 dark:text-pink-400 border-gray-200 dark:border-gray-700">Edit Class (Admin/Teacher)</h4>
+                <h4 class="text-xl font-semibold border-t pt-4 text-pink-400 border-gray-700">Edit Class (Admin/Teacher)</h4>
                 <input type="hidden" id="edit-id">
 
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">New Subject:</label>
-                <input type="text" id="edit-subject" required class="w-full p-2 border rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-pink-500 focus:border-pink-500">
+                <label class="block text-sm font-medium text-gray-300">New Subject:</label>
+                <input type="text" id="edit-subject" required class="w-full p-2 border rounded border-gray-600 bg-gray-700 text-white focus:ring-pink-500 focus:border-pink-500">
 
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">New Start Time (YYYY-MM-DD HH:MM):</label>
-                <input type="datetime-local" id="edit-start" required class="w-full p-2 border rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-pink-500 focus:border-pink-500">
+                <label class="block text-sm font-medium text-gray-300">New Start Time (YYYY-MM-DD HH:MM):</label>
+                <input type="datetime-local" id="edit-start" required class="w-full p-2 border rounded border-gray-600 bg-gray-700 text-white focus:ring-pink-500 focus:border-pink-500">
 
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">New Room:</label>
-                <select id="edit-room" class="w-full p-2 border rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-pink-500 focus:border-pink-500"></select>
+                <label class="block text-sm font-medium text-gray-300">New Room:</label>
+                <select id="edit-room" class="w-full p-2 border rounded border-gray-600 bg-gray-700 text-white focus:ring-pink-500 focus:border-pink-500"></select>
 
                 <div class="flex flex-col space-y-2 md:space-y-0 md:flex-row md:space-x-4">
                     <button type="submit" class="flex-1 bg-pink-600 text-white py-2 rounded-lg hover:bg-pink-700 transition duration-300">Save Changes</button>
@@ -181,7 +162,7 @@
                 </div>
             </form>
 
-            <button id="close-detail-modal" class="mt-6 w-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-300 py-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition duration-300">Close</button>
+            <button id="close-detail-modal" class="mt-6 w-full bg-gray-700 text-gray-300 py-2 rounded-lg hover:bg-gray-600 transition duration-300">Close</button>
         </div>
     </div>
 
@@ -204,47 +185,12 @@
         let allClasses = [];
         let allRooms = [];
         let allProfiles = [];
+        let allPrograms = []; // Master list of programs for filters
         // Role is permanently set to student as Kiosk is public
         const currentRole = 'student'; 
         let currentProgram = 'Junior High';
         let currentGrade = null;
         let currentSection = null;
-
-        // ====================================================================
-        // DARK MODE TOGGLE LOGIC
-        // ====================================================================
-
-        const htmlEl = document.documentElement;
-        const sunIcon = document.getElementById('sun-icon');
-        const moonIcon = document.getElementById('moon-icon');
-        const darkModeToggle = document.getElementById('dark-mode-toggle');
-
-        function updateDarkModeIcons(isDark) {
-            if (isDark) {
-                sunIcon.classList.add('hidden');
-                moonIcon.classList.remove('hidden');
-            } else {
-                sunIcon.classList.remove('hidden');
-                moonIcon.classList.add('hidden');
-            }
-        }
-
-        function toggleDarkMode() {
-            if (htmlEl.classList.contains('dark')) {
-                // Switch to light mode
-                htmlEl.classList.remove('dark');
-                localStorage.setItem('theme', 'light');
-                updateDarkModeIcons(false);
-            } else {
-                // Switch to dark mode
-                htmlEl.classList.add('dark');
-                localStorage.setItem('theme', 'dark');
-                updateDarkModeIcons(true);
-            }
-        }
-
-        // Initial setup for icons (check based on pre-load script result)
-        updateDarkModeIcons(htmlEl.classList.contains('dark'));
 
 
         // ====================================================================
@@ -253,7 +199,7 @@
         // ====================================================================
 
         /**
-         * Fetches all static data (Rooms and Profiles)
+         * Fetches all static data (Rooms, Profiles, and Programs)
          */
         async function fetchStaticData() {
             try {
@@ -267,6 +213,14 @@
                 if (profileError) throw profileError;
                 allProfiles = profiles;
                 console.log('Fetched Profiles:', allProfiles.length);
+                
+                // Fetch the master list of programs for filters
+                const { data: programs, error: programError } = await supabase.from('programs').select('*');
+                if (programError) throw programError;
+                allPrograms = programs;
+                console.log('Fetched Programs:', allPrograms.length);
+
+                renderFilters(); // Render filters immediately after fetching master programs list
 
             } catch (error) {
                 console.error('Error fetching static data:', error.message);
@@ -312,7 +266,7 @@
                 if (error) throw error;
                 allClasses = data;
                 console.log('Fetched Classes:', allClasses.length);
-                renderFilters();
+                
                 // We call renderCalendar here only to ensure the calendar exists initially, 
                 // but subsequent rendering will rely on the "See Schedule" button click.
                 if (!calendar) {
@@ -333,28 +287,34 @@
         // ====================================================================
 
         /**
-         * Renders filter dropdowns based on current data.
+         * Renders filter dropdowns based on current data (master list of programs).
          */
         function renderFilters() {
-            let currentProgramData = allClasses.filter(c => c.programs.name === currentProgram);
+            // Use allPrograms as the source for the filter options, not allClasses
+            let currentProgramData = allPrograms.filter(p => p.name === currentProgram);
 
             // 1. Grade Filter
-            const grades = [...new Set(currentProgramData.map(c => c.programs.grade_level))].sort((a, b) => a - b);
+            // Extract unique grade levels from the filtered program list
+            const grades = [...new Set(currentProgramData.map(p => p.grade_level))].sort((a, b) => a - b);
             const gradeFilterEl = document.getElementById('grade-filter');
             gradeFilterEl.innerHTML = `<option value="">All Grades</option>`;
             grades.forEach(grade => {
+                // Ensure grade comparison handles string/number mismatch if it occurs
                 gradeFilterEl.innerHTML += `<option value="${grade}" ${grade == currentGrade ? 'selected' : ''}>Grade ${grade}</option>`;
             });
 
 
-            // Filter data by current grade if set, for populating section filters
+            // Filter program data by current grade if set, for populating section filters
+            let sectionsSource = currentProgramData;
             if (currentGrade) {
-                currentProgramData = currentProgramData.filter(c => c.programs.grade_level == currentGrade);
+                // Filter the sections based on the selected grade
+                sectionsSource = currentProgramData.filter(p => p.grade_level == currentGrade);
             }
 
             // 2. Section Filter (Dynamically filtered by Program and Grade)
             const sectionFilterEl = document.getElementById('section-filter');
-            const sections = [...new Set(currentProgramData.map(c => c.programs.section))].sort();
+            // Extract unique sections from the filtered program list
+            const sections = [...new Set(sectionsSource.map(p => p.section))].sort();
 
             sectionFilterEl.innerHTML = `<option value="">All Sections</option>`;
             sections.forEach(section => {
@@ -517,14 +477,13 @@
                 document.querySelectorAll('.program-tab').forEach(btn => {
                     const isSelected = btn.dataset.program === currentProgram;
                     
-                    // Remove all existing color classes for light/dark
-                    btn.classList.remove('bg-pink-100', 'text-pink-700', 'dark:bg-pink-900', 'dark:text-pink-100', 
-                                         'bg-gray-100', 'text-gray-700', 'dark:bg-gray-700', 'dark:text-gray-300');
+                    // Permanent dark theme classes
+                    btn.classList.remove('bg-pink-900', 'text-pink-100', 'bg-gray-700', 'text-gray-300', 'hover:bg-pink-800', 'hover:bg-gray-600');
 
                     if (isSelected) {
-                        btn.classList.add('bg-pink-100', 'text-pink-700', 'dark:bg-pink-900', 'dark:text-pink-100');
+                        btn.classList.add('bg-pink-900', 'text-pink-100', 'hover:bg-pink-800');
                     } else {
-                        btn.classList.add('bg-gray-100', 'text-gray-700', 'dark:bg-gray-700', 'dark:text-gray-300');
+                        btn.classList.add('bg-gray-700', 'text-gray-300', 'hover:bg-gray-600');
                     }
                 });
                 renderFilters();
@@ -577,8 +536,7 @@
         // ====================================================================
 
         async function init() {
-            // FIX: Attach dark mode listener here to ensure the DOM is fully loaded.
-            darkModeToggle.addEventListener('click', toggleDarkMode); 
+            // No need for dark mode listener as it's permanently dark.
 
             // No need to update auth status or sign in
             document.getElementById('user-status').textContent = 'Kiosk View Mode';
@@ -586,9 +544,9 @@
             await fetchStaticData();
             setupRealtimeListener();
 
-            // Set initial colors for program tabs
-            document.querySelector('.program-tab[data-program="Junior High"]').classList.add('bg-pink-100', 'text-pink-700', 'dark:bg-pink-900', 'dark:text-pink-100');
-            document.querySelector('.program-tab[data-program="Senior High"]').classList.add('bg-gray-100', 'text-gray-700', 'dark:bg-gray-700', 'dark:text-gray-300');
+            // Set initial colors for program tabs (using permanent dark classes)
+            document.querySelector('.program-tab[data-program="Junior High"]').classList.add('bg-pink-900', 'text-pink-100');
+            document.querySelector('.program-tab[data-program="Senior High"]').classList.add('bg-gray-700', 'text-gray-300');
         }
 
         window.onload = init;
