@@ -41,7 +41,6 @@
             scrollbar-width: thin;
         }
 
-        /* Prevent button text wrapping in mobile nav */
         .sidebar-link span { white-space: nowrap; }
 
         .sidebar-link { transition: all 0.3s ease; position: relative; cursor: pointer; }
@@ -84,15 +83,13 @@
             box-shadow: 0 4px 12px rgba(236, 72, 153, 0.3);
         }
 
-        /* Hide scrollbar for Chrome, Safari and Opera */
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        /* Hide scrollbar for IE, Edge and Firefox */
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
 <body class="flex flex-col lg:flex-row overflow-hidden bg-slate-950">
 
-    <!-- NAVIGATION BAR (Moves to bottom on mobile) -->
+    <!-- NAVIGATION BAR -->
     <nav class="order-last lg:order-first w-full lg:w-72 h-20 lg:h-full flex lg:flex-col glass border-t lg:border-t-0 lg:border-r border-white/5 z-50 shrink-0">
         <div class="hidden lg:block p-8 mb-4">
             <h1 class="text-2xl font-black tracking-tighter bg-gradient-to-r from-pink-500 to-violet-500 bg-clip-text text-transparent uppercase">STEC Kiosk</h1>
@@ -110,6 +107,12 @@
             <button type="button" onclick="switchTab('directory', event)" data-tab="directory" class="sidebar-link flex-1 lg:flex-none p-3 lg:p-4 rounded-xl flex flex-col lg:flex-row items-center gap-1 lg:gap-4 text-slate-400 hover:text-white">
                 <i class="fa-solid fa-address-book text-lg lg:text-xl"></i>
                 <span class="text-[9px] lg:text-sm font-bold lg:font-medium">Staff</span>
+            </button>
+            
+            <!-- Mobile Specific Buttons -->
+            <button type="button" id="mobile-admin-btn" onclick="openClassModal()" class="hidden flex-1 p-3 rounded-xl flex flex-col items-center gap-1 text-emerald-400">
+                <i class="fa-solid fa-plus-circle text-lg"></i>
+                <span class="text-[9px] font-bold">Manage</span>
             </button>
             <button type="button" id="mobile-ai-trigger" class="lg:hidden flex-1 p-3 rounded-xl flex flex-col items-center gap-1 text-indigo-400">
                 <i class="fa-solid fa-wand-magic-sparkles text-lg"></i>
@@ -161,9 +164,8 @@
             </div>
         </header>
 
-        <!-- Dynamic Content Switcher -->
         <div class="flex-grow relative overflow-hidden">
-            <!-- MAP TAB -->
+            <!-- TABS (Map, Calendar, Directory) -->
             <div id="tab-map" class="tab-content absolute inset-0 p-3 lg:p-8 flex flex-col scroll-container">
                 <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 h-full">
                     <div class="lg:col-span-3 glass-card rounded-2xl lg:rounded-3xl relative overflow-hidden flex items-center justify-center border-dashed border-2 border-white/10 min-h-[240px]">
@@ -185,21 +187,17 @@
                 </div>
             </div>
 
-            <!-- CALENDAR TAB -->
             <div id="tab-calendar" class="tab-content absolute inset-0 hidden p-2 lg:p-6 flex flex-col">
-                <!-- Mobile Filter (Hidden on LG) -->
                 <div class="lg:hidden flex gap-2 mb-3 overflow-x-auto pb-1 no-scrollbar shrink-0">
                     <button type="button" onclick="setSchoolLevel('Junior High')" class="level-btn active whitespace-nowrap px-4 py-2 bg-slate-900 border border-white/5 rounded-full text-[10px] font-bold" data-level="Junior High">JHS</button>
                     <button type="button" onclick="setSchoolLevel('Senior High')" class="level-btn whitespace-nowrap px-4 py-2 bg-slate-900 border border-white/5 rounded-full text-[10px] font-bold" data-level="Senior High">SHS</button>
                     <select id="mobile-program-select" class="bg-slate-900 border border-white/5 rounded-full px-4 py-2 text-[10px] font-bold outline-none min-w-[120px] text-white"></select>
                 </div>
-                <!-- Calendar Container -->
                 <div class="flex-grow glass-card rounded-2xl lg:rounded-3xl p-1 lg:p-4 overflow-hidden relative">
                     <div id="calendar" class="h-full w-full"></div>
                 </div>
             </div>
 
-            <!-- DIRECTORY TAB -->
             <div id="tab-directory" class="tab-content absolute inset-0 hidden p-4 lg:p-8 flex flex-col">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 shrink-0">
                     <div>
@@ -216,7 +214,7 @@
         </div>
     </main>
 
-    <!-- MODAL: LOGIN -->
+    <!-- MODALS -->
     <div id="modal-login" class="fixed inset-0 bg-slate-950/90 backdrop-blur-xl hidden items-center justify-center z-[100] p-4">
         <div class="w-full max-w-sm glass p-6 lg:p-8 rounded-[32px] relative shadow-2xl">
             <button type="button" class="close-modal absolute top-6 right-6 text-slate-500 hover:text-white transition"><i class="fa-solid fa-xmark text-xl"></i></button>
@@ -235,7 +233,6 @@
         </div>
     </div>
 
-    <!-- MODAL: AI ASSISTANT -->
     <div id="modal-ai" class="fixed inset-0 bg-slate-950/40 hidden justify-end z-[120]">
         <div class="w-full max-w-md glass flex flex-col h-full lg:h-auto lg:m-4 lg:rounded-[32px] shadow-2xl overflow-hidden">
             <div class="p-6 border-b border-white/5 flex items-center justify-between shrink-0 bg-slate-900/50">
@@ -252,7 +249,7 @@
             </div>
             <div id="chat-box" class="flex-grow overflow-y-auto p-4 lg:p-6 flex flex-col gap-4 bg-slate-950/20 scroll-container">
                 <div class="chat-bubble-bot p-4 rounded-2xl text-xs lg:text-sm self-start max-w-[85%] text-slate-300">
-                    Greetings! I am the STEC Kiosk Assistant. Need help finding a classroom or checking a teacher's schedule?
+                    Greetings! I am the STEC Kiosk Assistant. Need help finding a classroom?
                 </div>
             </div>
             <div id="ai-loading" class="px-6 py-2 hidden shrink-0">
@@ -267,7 +264,6 @@
         </div>
     </div>
 
-    <!-- MODAL: ADD CLASS (Simplified) -->
     <div id="modal-class" class="fixed inset-0 bg-slate-950/95 backdrop-blur-xl hidden items-center justify-center z-[130] p-4">
         <div class="w-full max-w-lg glass p-6 lg:p-8 rounded-[32px] relative scroll-container max-h-[90vh]">
             <button type="button" class="close-modal absolute top-6 right-6 text-slate-500 hover:text-white transition"><i class="fa-solid fa-xmark text-xl"></i></button>
@@ -350,6 +346,19 @@
 
             if(id === 'calendar') renderCalendar();
             if(id === 'directory') loadDirectory();
+        }
+
+        function openClassModal() {
+            document.getElementById('modal-class').classList.replace('hidden', 'flex');
+            loadFormOptions();
+        }
+
+        async function loadFormOptions() {
+            const { data: progs } = await supabase.from('programs').select('*').order('grade_level');
+            const { data: rms } = await supabase.from('rooms').select('*').order('name');
+            
+            document.getElementById('class-program').innerHTML = progs.map(p => `<option value="${p.id}">${p.grade_level}-${p.section}</option>`).join('');
+            document.getElementById('class-room').innerHTML = rms.map(r => `<option value="${r.id}">${r.name}</option>`).join('');
         }
 
         // Calendar Engine
@@ -457,9 +466,15 @@
             if (data && (data.role === 'admin' || data.role === 'teacher')) {
                 state.user = data;
                 state.isAdmin = true;
+                
+                // Show admin UI
                 document.getElementById('modal-login').classList.replace('flex', 'hidden');
                 document.getElementById('login-trigger').innerHTML = `<i class="fa-solid fa-circle-check lg:mr-2"></i><span class="hidden lg:inline">Admin Mode</span>`;
+                
+                // Show for desktop
                 document.getElementById('admin-controls').classList.remove('hidden');
+                // Show for mobile bottom bar
+                document.getElementById('mobile-admin-btn').classList.remove('hidden');
             } else {
                 const btn = e.target.querySelector('button');
                 btn.textContent = "Access Denied";
@@ -471,7 +486,26 @@
             }
         }
 
-        // AI Chat
+        async function handleClassSubmit(e) {
+            e.preventDefault();
+            if(!state.user) return;
+
+            const payload = {
+                subject: document.getElementById('class-subject').value,
+                program_id: document.getElementById('class-program').value,
+                room_id: document.getElementById('class-room').value,
+                start_time: `${document.getElementById('class-date').value}T${document.getElementById('class-start').value}:00`,
+                end_time: `${document.getElementById('class-date').value}T${document.getElementById('class-end').value}:00`,
+                teacher_id: state.user.id
+            };
+
+            const { error } = await supabase.from('classes').insert([payload]);
+            if(!error) {
+                document.getElementById('modal-class').classList.replace('flex', 'hidden');
+                if(state.calendar) state.calendar.refetchEvents();
+            }
+        }
+
         async function handleAIChat(e) {
             e.preventDefault();
             const input = document.getElementById('ai-input');
@@ -508,7 +542,7 @@
             }
         }
 
-        // Init
+        // Global Handlers
         document.getElementById('login-trigger').onclick = () => document.getElementById('modal-login').classList.replace('hidden', 'flex');
         document.getElementById('mobile-ai-trigger').onclick = () => document.getElementById('modal-ai').classList.replace('hidden', 'flex');
         document.getElementById('ai-btn').onclick = () => document.getElementById('modal-ai').classList.replace('hidden', 'flex');
