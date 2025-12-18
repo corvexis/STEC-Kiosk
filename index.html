@@ -80,8 +80,13 @@
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         
-        .chat-bubble-bot { border-bottom-left-radius: 2px; background: #1e293b; }
-        .chat-bubble-user { border-bottom-right-radius: 2px; background: linear-gradient(135deg, #ec4899, #8b5cf6); }
+        .typing-dots span {
+            width: 4px; height: 4px; background: #6366f1; border-radius: 50%; display: inline-block;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+        .typing-dots span:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dots span:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1.0); } }
     </style>
 </head>
 <body class="flex flex-col lg:flex-row overflow-hidden bg-slate-950">
@@ -90,7 +95,7 @@
     <nav class="order-last lg:order-first w-full lg:w-72 h-20 lg:h-full flex lg:flex-col glass border-t lg:border-t-0 lg:border-r border-white/5 z-50 shrink-0">
         <div class="hidden lg:block p-8 mb-4 text-center">
             <h1 class="text-2xl font-black tracking-tighter bg-gradient-to-r from-pink-500 to-violet-500 bg-clip-text text-transparent uppercase">BCSTEC Kiosk</h1>
-            <p class="text-[8px] font-bold text-slate-500 tracking-[0.3em] uppercase mt-1">Next-Gen Campus Intelligence</p>
+            <p class="text-[8px] font-bold text-slate-500 tracking-[0.3em] uppercase mt-1">Elite Campus Intelligence</p>
         </div>
 
         <div class="flex flex-row lg:flex-col flex-grow justify-around lg:justify-start lg:space-y-1 px-1 lg:px-3 overflow-hidden">
@@ -107,9 +112,9 @@
                 <span class="text-[9px] lg:text-sm font-bold lg:font-medium">Staff</span>
             </button>
             
-            <!-- Mobile Admin Action -->
+            <!-- Mobile Admin Action (Visible when logged in) -->
             <button type="button" id="admin-manage-btn-mobile" onclick="openClassModal()" class="hidden flex-1 p-3 rounded-xl flex flex-col items-center gap-1 text-emerald-400">
-                <i class="fa-solid fa-calendar-check text-lg"></i>
+                <i class="fa-solid fa-calendar-plus text-lg"></i>
                 <span class="text-[9px] font-bold">Manage</span>
             </button>
 
@@ -139,7 +144,7 @@
         <header class="h-16 lg:h-20 flex items-center justify-between px-4 lg:px-8 border-b border-white/5 bg-slate-950/40 backdrop-blur-md shrink-0">
             <div>
                 <h2 id="view-title" class="text-base lg:text-xl font-bold text-white leading-tight">Campus Navigator</h2>
-                <p id="view-subtitle" class="hidden lg:block text-[10px] text-slate-500 uppercase font-black tracking-widest">BCSTEC Elite Interactive Platform</p>
+                <p id="view-subtitle" class="hidden lg:block text-[10px] text-slate-500 uppercase font-black tracking-widest">BCSTEC Interactive Platform</p>
             </div>
 
             <div class="flex items-center gap-3 lg:gap-6">
@@ -195,12 +200,10 @@
 
             <!-- CALENDAR TAB -->
             <div id="tab-calendar" class="tab-content absolute inset-0 hidden p-2 lg:p-6 flex flex-col">
-                <div class="mb-4 lg:mb-6 flex flex-wrap gap-2 lg:gap-4 px-2">
-                    <select id="filter-program" class="bg-slate-900 border border-white/10 rounded-xl px-4 py-2 text-xs font-bold text-white outline-none focus:ring-2 ring-pink-500">
-                        <option value="">All Programs</option>
-                    </select>
-                    <select id="filter-grade" class="bg-slate-900 border border-white/10 rounded-xl px-4 py-2 text-xs font-bold text-white outline-none focus:ring-2 ring-pink-500">
-                        <option value="">All Grades</option>
+                <div class="mb-4 lg:mb-6 flex flex-wrap gap-2 lg:gap-4 px-2 items-center">
+                    <label class="text-[10px] font-bold uppercase text-slate-500 tracking-widest">Filter by Section:</label>
+                    <select id="filter-section" class="bg-slate-900 border border-white/10 rounded-xl px-4 py-2 text-xs font-bold text-white outline-none focus:ring-2 ring-pink-500 min-w-[150px]">
+                        <option value="">All Sections</option>
                     </select>
                 </div>
                 <div class="flex-grow glass-card rounded-2xl p-1 lg:p-4 overflow-hidden relative">
@@ -211,44 +214,11 @@
             <!-- DIRECTORY TAB -->
             <div id="tab-directory" class="tab-content absolute inset-0 hidden p-4 lg:p-8 flex flex-col">
                 <div id="directory-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 overflow-y-auto scroll-container pb-24">
-                    <!-- Staff profiles with media_url images go here -->
+                    <!-- Staff profiles -->
                 </div>
             </div>
         </div>
     </main>
-
-    <!-- MODALS -->
-    <!-- AI CHAT MODAL -->
-    <div id="modal-ai" class="fixed inset-0 bg-slate-950/40 hidden justify-end z-[120]">
-        <div class="w-full max-w-md glass flex flex-col h-full lg:h-[85vh] lg:m-6 lg:rounded-[40px] shadow-2xl overflow-hidden self-end">
-            <div class="p-6 border-b border-white/5 flex items-center justify-between shrink-0 bg-slate-900/80 backdrop-blur-md">
-                <div class="flex items-center gap-4">
-                    <div class="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white text-xl shadow-lg shadow-indigo-500/20">
-                        <i class="fa-solid fa-robot"></i>
-                    </div>
-                    <div>
-                        <h3 class="font-bold text-white text-base">BCSTEC Gemini</h3>
-                        <p class="text-[9px] text-indigo-400 font-black uppercase tracking-widest mt-1">Experimental AI Assistant</p>
-                    </div>
-                </div>
-                <button type="button" class="close-modal text-slate-500 p-2 hover:text-white transition"><i class="fa-solid fa-xmark text-lg"></i></button>
-            </div>
-            <div id="chat-box" class="flex-grow overflow-y-auto p-6 flex flex-col gap-5 bg-slate-950/40 scroll-container">
-                <div class="chat-bubble-bot p-5 rounded-2xl text-xs lg:text-sm self-start max-w-[85%] text-slate-300 border border-white/5">
-                    Mabuhay! I am the **Bayawan City Science and Technology Education Center** AI assistant. How can I help you today?
-                </div>
-            </div>
-            <div id="ai-loading" class="px-8 py-2 hidden shrink-0">
-                <div class="typing-dots space-x-1"><span></span><span></span><span></span></div>
-            </div>
-            <form id="form-ai" class="p-5 bg-slate-900/90 border-t border-white/5 flex gap-3" onsubmit="handleAIChat(event)">
-                <input type="text" id="ai-input" placeholder="Ask about schedules or rooms..." class="flex-grow bg-slate-800/80 rounded-2xl px-5 py-4 text-sm text-white outline-none focus:ring-2 ring-indigo-500">
-                <button type="submit" class="w-14 h-14 bg-indigo-600 hover:bg-indigo-500 transition rounded-2xl flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
-                    <i class="fa-solid fa-paper-plane"></i>
-                </button>
-            </form>
-        </div>
-    </div>
 
     <!-- ADMIN LOGIN MODAL -->
     <div id="modal-login" class="fixed inset-0 bg-slate-950/80 hidden items-center justify-center z-[200] p-4 backdrop-blur-sm">
@@ -270,14 +240,14 @@
                     <label class="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Secure Passkey</label>
                     <input type="password" id="login-pass" required placeholder="••••••••" class="w-full bg-slate-900/50 border border-white/10 rounded-xl px-4 py-3.5 text-sm text-white outline-none focus:ring-2 ring-pink-500 transition">
                 </div>
-                <button type="submit" class="w-full py-4 bg-pink-600 hover:bg-pink-500 text-white rounded-xl font-bold text-sm transition transform active:scale-95 shadow-xl shadow-pink-600/20 mt-4">
+                <button type="submit" class="w-full py-4 bg-pink-600 hover:bg-pink-500 text-white rounded-xl font-bold text-sm transition mt-4">
                     Verify Access
                 </button>
             </form>
         </div>
     </div>
 
-    <!-- ADD/EDIT CLASS MODAL -->
+    <!-- CLASS MODAL -->
     <div id="modal-class" class="fixed inset-0 bg-slate-950/80 hidden items-center justify-center z-[200] p-4 backdrop-blur-sm">
         <div class="w-full max-w-xl glass rounded-[32px] p-6 lg:p-8 shadow-2xl relative overflow-y-auto max-h-[90vh]">
             <button type="button" class="close-modal absolute top-6 right-6 text-slate-500 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
@@ -291,7 +261,7 @@
                     <input type="text" id="class-subject" required class="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:ring-2 ring-emerald-500">
                 </div>
                 <div class="space-y-1.5">
-                    <label class="text-[10px] font-bold uppercase text-slate-500 ml-1">Program</label>
+                    <label class="text-[10px] font-bold uppercase text-slate-500 ml-1">Program (Section)</label>
                     <select id="class-program" required class="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:ring-2 ring-emerald-500"></select>
                 </div>
                 <div class="space-y-1.5">
@@ -318,13 +288,45 @@
                     <input type="time" id="class-end" required class="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:ring-2 ring-emerald-500">
                 </div>
                 <div class="md:col-span-2 pt-4">
-                    <button type="submit" class="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold transition">Update Schedule</button>
+                    <button type="submit" class="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold transition">Save Schedule</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- TOAST NOTIFICATION -->
+    <!-- AI MODAL -->
+    <div id="modal-ai" class="fixed inset-0 bg-slate-950/40 hidden justify-end z-[120]">
+        <div class="w-full max-w-md glass flex flex-col h-full lg:h-[85vh] lg:m-6 lg:rounded-[40px] shadow-2xl overflow-hidden self-end">
+            <div class="p-6 border-b border-white/5 flex items-center justify-between shrink-0 bg-slate-900/80 backdrop-blur-md">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white text-xl shadow-lg shadow-indigo-500/20">
+                        <i class="fa-solid fa-robot"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-white text-base">BCSTEC AI</h3>
+                        <p class="text-[9px] text-indigo-400 font-black uppercase tracking-widest mt-1">Experimental Assistant</p>
+                    </div>
+                </div>
+                <button type="button" class="close-modal text-slate-500 p-2 hover:text-white transition"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div id="chat-box" class="flex-grow overflow-y-auto p-6 flex flex-col gap-5 bg-slate-950/40 scroll-container">
+                <div class="chat-bubble-bot p-5 rounded-2xl text-xs lg:text-sm self-start max-w-[85%] text-slate-300 border border-white/5">
+                    Mabuhay! I am the BCSTEC AI. How can I help you today?
+                </div>
+            </div>
+            <div id="ai-loading" class="px-8 py-2 hidden shrink-0">
+                <div class="typing-dots space-x-1"><span></span><span></span><span></span></div>
+            </div>
+            <form id="form-ai" class="p-5 bg-slate-900/90 border-t border-white/5 flex gap-3" onsubmit="handleAIChat(event)">
+                <input type="text" id="ai-input" placeholder="Ask about schedules or teachers..." class="flex-grow bg-slate-800/80 rounded-2xl px-5 py-4 text-sm text-white outline-none focus:ring-2 ring-indigo-500">
+                <button type="submit" class="w-14 h-14 bg-indigo-600 hover:bg-indigo-500 transition rounded-2xl flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
+                    <i class="fa-solid fa-paper-plane"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- TOAST -->
     <div id="toast" class="fixed bottom-24 lg:bottom-10 right-6 lg:right-10 glass rounded-2xl px-6 py-4 translate-y-24 transition-transform duration-500 z-[300] border-l-4">
         <div class="flex items-center gap-4">
             <div id="toast-icon" class="text-lg"></div>
@@ -336,16 +338,13 @@
     </div>
 
     <script>
-        // --- CONFIGURATION ---
+        // --- CONFIG ---
         const apiKey = "AIzaSyDVWjA31ScGRW7mWIDbO9TsLC_9vtL9uFs"; 
-        const SUPABASE_CONFIG = {
-            URL: "https://nwwkgmlnnlsmbjrvcnaj.supabase.co",
-            KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im53d2tnbWxubmxzbWJqcnZjbmFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3OTYxMDcsImV4cCI6MjA4MTM3MjEwN30.Stz0PC0XAxlAkmHpWxY9reIeVzbXaDKuiSUOrJ4HB7Y"
-        };
+        const SUPABASE_URL = "https://nwwkgmlnnlsmbjrvcnaj.supabase.co";
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im53d2tnbWxubmxzbWJqcnZjbmFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3OTYxMDcsImV4cCI6MjA4MTM3MjEwN30.Stz0PC0XAxlAkmHpWxY9reIeVzbXaDKuiSUOrJ4HB7Y";
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        const supabase = window.supabase.createClient(SUPABASE_CONFIG.URL, SUPABASE_CONFIG.KEY);
-
-        // --- APP STATE ---
+        // --- STATE ---
         let state = {
             user: JSON.parse(localStorage.getItem('bcstec_staff')) || null,
             calendar: null,
@@ -355,36 +354,23 @@
             rooms: []
         };
 
-        // --- UI HELPERS ---
+        // --- CORE UI ---
         function showToast(title, msg, type = 'success') {
             const toast = document.getElementById('toast');
-            const icon = document.getElementById('toast-icon');
-            const colors = {
-                success: ['border-emerald-500', '<i class="fa-solid fa-circle-check text-emerald-500"></i>'],
-                error: ['border-red-500', '<i class="fa-solid fa-circle-exclamation text-red-500"></i>'],
-                info: ['border-blue-500', '<i class="fa-solid fa-circle-info text-blue-500"></i>']
-            };
-            
-            toast.className = `fixed bottom-24 lg:bottom-10 right-6 lg:right-10 glass rounded-2xl px-6 py-4 transition-transform duration-500 z-[300] border-l-4 ${colors[type][0]}`;
-            icon.innerHTML = colors[type][1];
+            const colors = { success: 'border-emerald-500', error: 'border-red-500', info: 'border-blue-500' };
+            toast.className = `fixed bottom-24 lg:bottom-10 right-6 lg:right-10 glass rounded-2xl px-6 py-4 transition-transform duration-500 z-[300] border-l-4 ${colors[type]}`;
             document.getElementById('toast-title').textContent = title;
             document.getElementById('toast-msg').textContent = msg;
-            
             toast.classList.remove('translate-y-24');
-            setTimeout(() => toast.classList.add('translate-y-24'), 4000);
+            setTimeout(() => toast.classList.add('translate-y-24'), 3000);
         }
 
         function switchTab(id, event) {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
             document.getElementById(`tab-${id}`).classList.remove('hidden');
-            
             document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
-            if(event) {
-                event.currentTarget.classList.add('active');
-            } else {
-                const trigger = document.querySelector(`[data-tab="${id}"]`);
-                if(trigger) trigger.classList.add('active');
-            }
+            if(event) event.currentTarget.classList.add('active');
+            else document.querySelector(`[data-tab="${id}"]`)?.classList.add('active');
 
             const titles = { map: 'Campus Navigator', calendar: 'Schedule Explorer', directory: 'Staff Directory' };
             document.getElementById('view-title').textContent = titles[id] || 'BCSTEC';
@@ -393,17 +379,13 @@
             if(id === 'directory') loadDirectory();
         }
 
-        // --- AUTH LOGIC ---
+        // --- AUTH ---
         async function handleLogin(e) {
             e.preventDefault();
-            const name = document.getElementById('login-name').value;
-            const pass = document.getElementById('login-pass').value;
-
-            const { data, error } = await supabase
-                .from('profiles')
+            const { data, error } = await supabase.from('profiles')
                 .select('*')
-                .eq('full_name', name)
-                .eq('passkey', pass)
+                .eq('full_name', document.getElementById('login-name').value)
+                .eq('passkey', document.getElementById('login-pass').value)
                 .single();
 
             if (data) {
@@ -411,164 +393,129 @@
                 localStorage.setItem('bcstec_staff', JSON.stringify(data));
                 updateAdminUI();
                 document.getElementById('modal-login').classList.replace('flex', 'hidden');
-                showToast('Welcome back', `Access granted to ${data.full_name}`);
+                showToast('Welcome', `Access granted: ${data.full_name}`);
             } else {
-                showToast('Access Denied', 'Invalid credentials provided.', 'error');
+                showToast('Denied', 'Invalid credentials', 'error');
             }
         }
 
         function updateAdminUI() {
-            const controlsDesktop = document.getElementById('admin-controls-desktop');
-            const controlMobile = document.getElementById('admin-manage-btn-mobile');
+            const desktop = document.getElementById('admin-controls-desktop');
+            const mobile = document.getElementById('admin-manage-btn-mobile');
             const loginBtn = document.getElementById('login-trigger');
             
             if (state.user) {
-                controlsDesktop.classList.remove('hidden');
-                controlMobile.classList.remove('hidden');
+                desktop.classList.remove('hidden');
+                mobile.classList.remove('hidden');
                 loginBtn.innerHTML = `<i class="fa-solid fa-user-shield lg:mr-2"></i><span class="hidden lg:inline">${state.user.full_name.split(' ')[0]}</span>`;
-                loginBtn.onclick = () => {
-                    if(confirm('Logout from Staff Portal?')) {
-                        state.user = null;
-                        localStorage.removeItem('bcstec_staff');
-                        location.reload();
-                    }
-                };
+                loginBtn.onclick = () => { if(confirm('Logout?')) { state.user = null; localStorage.removeItem('bcstec_staff'); location.reload(); } };
             }
         }
 
-        // --- CALENDAR LOGIC ---
+        // --- DATA LOADERS ---
+        async function loadSharedData() {
+            if (state.programs.length > 0) return;
+            const [p, t, r] = await Promise.all([
+                supabase.from('programs').select('*').order('section'),
+                supabase.from('profiles').select('*').eq('role', 'teacher').order('full_name'),
+                supabase.from('rooms').select('*').order('name')
+            ]);
+            state.programs = p.data || [];
+            state.teachers = t.data || [];
+            state.rooms = r.data || [];
+
+            // Populate Section Filter
+            const sectionSelect = document.getElementById('filter-section');
+            sectionSelect.innerHTML = '<option value="">All Sections</option>' + 
+                state.programs.map(prog => `<option value="${prog.id}">${prog.section} (G${prog.grade_level})</option>`).join('');
+
+            // Populate Modal Selects
+            document.getElementById('class-program').innerHTML = state.programs.map(p => `<option value="${p.id}">${p.section} - G${p.grade_level}</option>`).join('');
+            document.getElementById('class-teacher').innerHTML = state.teachers.map(t => `<option value="${t.id}">${t.full_name}</option>`).join('');
+            document.getElementById('class-room').innerHTML = state.rooms.map(r => `<option value="${r.id}">${r.name}</option>`).join('');
+        }
+
+        // --- CALENDAR ---
         async function renderCalendar() {
+            await loadSharedData();
             const el = document.getElementById('calendar');
-            if(state.calendar) {
-                state.calendar.render();
-                return;
-            }
+            if(state.calendar) { state.calendar.render(); return; }
 
             state.calendar = new FullCalendar.Calendar(el, {
                 initialView: 'timeGridDay',
-                headerToolbar: {
-                    left: 'prev,next today',
-                    center: 'title',
-                    right: 'timeGridDay,timeGridWeek'
-                },
-                slotMinTime: '07:00:00',
-                slotMaxTime: '18:00:00',
-                allDaySlot: false,
-                height: '100%',
-                nowIndicator: true,
+                headerToolbar: { left: 'prev,next today', center: 'title', right: 'timeGridDay,timeGridWeek' },
+                slotMinTime: '07:00:00', slotMaxTime: '18:00:00',
+                allDaySlot: false, height: '100%', nowIndicator: true,
                 events: async (info, success, failure) => {
-                    const prog = document.getElementById('filter-program').value;
-                    const grade = document.getElementById('filter-grade').value;
-
+                    const sectionId = document.getElementById('filter-section').value;
                     let query = supabase.from('classes').select(`
                         id, subject, start_time, end_time, day_of_week, program_id, teacher_id, room_id,
-                        profiles(full_name), rooms(name), programs(name, grade_level, section)
+                        profiles(full_name), rooms(name), programs(section)
                     `);
-
-                    if (prog) query = query.eq('program_id', prog);
-                    if (grade) query = query.eq('programs.grade_level', grade);
+                    if (sectionId) query = query.eq('program_id', sectionId);
 
                     const { data, error } = await query;
                     if (error) return failure(error);
 
-                    const events = data.map(c => {
+                    success(data.map(c => {
                         const dayOffset = (c.day_of_week - new Date().getDay() + 7) % 7;
-                        const baseDate = new Date();
-                        baseDate.setDate(baseDate.getDate() + dayOffset);
-                        const dateStr = baseDate.toISOString().split('T')[0];
-
+                        const date = new Date(); date.setDate(date.getDate() + dayOffset);
+                        const dStr = date.toISOString().split('T')[0];
                         return {
                             id: c.id,
-                            title: `${c.subject} (${c.rooms?.name || 'N/A'})`,
-                            start: `${dateStr}T${c.start_time}`,
-                            end: `${dateStr}T${c.end_time}`,
-                            extendedProps: { ...c }
+                            title: `${c.subject} | ${c.rooms?.name || '??'}`,
+                            start: `${dStr}T${c.start_time}`,
+                            end: `${dStr}T${c.end_time}`,
+                            extendedProps: c
                         };
-                    });
-                    success(events);
+                    }));
                 },
-                eventClick: (info) => {
-                    if (state.user) openClassModal(info.event.extendedProps);
-                }
+                eventClick: (info) => { if (state.user) openClassModal(info.event.extendedProps); }
             });
             state.calendar.render();
+            document.getElementById('filter-section').onchange = () => state.calendar.refetchEvents();
         }
 
-        // --- DIRECTORY LOGIC ---
+        // --- DIRECTORY ---
         async function loadDirectory() {
             const grid = document.getElementById('directory-grid');
-            grid.innerHTML = '<div class="col-span-full py-20 text-center"><i class="fa-solid fa-spinner fa-spin text-3xl text-pink-500"></i></div>';
+            grid.innerHTML = '<div class="col-span-full py-20 text-center"><i class="fa-solid fa-circle-notch fa-spin text-3xl text-pink-500"></i></div>';
+            const { data } = await supabase.from('profiles').select('*').order('full_name');
             
-            const { data, error } = await supabase.from('profiles').select('*').order('full_name');
-            if (error) return showToast('Error', 'Failed to load staff list', 'error');
-
-            grid.innerHTML = data.map(p => {
-                const imageHtml = p.media_url 
-                    ? `<img src="${p.media_url}" alt="${p.full_name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
-                       <div class="hidden text-pink-500 font-bold text-xl">${p.full_name.charAt(0)}</div>`
-                    : `<div class="text-pink-500 font-bold text-xl">${p.full_name.charAt(0)}</div>`;
-
-                return `
-                <div class="glass-card p-5 lg:p-6 rounded-[32px] flex items-center gap-5">
+            grid.innerHTML = (data || []).map(p => `
+                <div class="glass-card p-5 rounded-[32px] flex items-center gap-5">
                     <div class="profile-image-container">
-                        ${imageHtml}
+                        ${p.media_url ? `<img src="${p.media_url}" alt="${p.full_name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">` : ''}
+                        <div class="${p.media_url ? 'hidden' : 'flex'} text-pink-500 font-bold text-xl">${p.full_name.charAt(0)}</div>
                     </div>
-                    <div class="overflow-hidden">
+                    <div>
                         <h4 class="font-bold text-white text-sm truncate">${p.full_name}</h4>
                         <p class="text-[9px] text-slate-500 uppercase font-black tracking-widest mt-1">${p.role}</p>
-                        <div class="flex gap-2 mt-3">
-                            <button class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-xs hover:bg-slate-700 transition"><i class="fa-solid fa-envelope"></i></button>
-                            <button class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-xs hover:bg-slate-700 transition"><i class="fa-solid fa-calendar"></i></button>
-                        </div>
                     </div>
-                </div>`;
-            }).join('');
+                </div>`).join('');
         }
 
-        // --- CLASS MODAL LOGIC ---
-        async function openClassModal(existingData = null) {
+        // --- CLASS ACTIONS ---
+        function openClassModal(data = null) {
+            loadSharedData();
             const modal = document.getElementById('modal-class');
             const form = document.getElementById('form-class');
             form.reset();
-
-            if (state.programs.length === 0) {
-                const [progRes, teachRes, roomRes] = await Promise.all([
-                    supabase.from('programs').select('*').order('grade_level'),
-                    supabase.from('profiles').select('*').eq('role', 'teacher').order('full_name'),
-                    supabase.from('rooms').select('*').order('name')
-                ]);
-                state.programs = progRes.data || [];
-                state.teachers = teachRes.data || [];
-                state.rooms = roomRes.data || [];
-
-                document.getElementById('class-program').innerHTML = state.programs.map(p => `<option value="${p.id}">G${p.grade_level} - ${p.section}</option>`).join('');
-                document.getElementById('class-teacher').innerHTML = state.teachers.map(t => `<option value="${t.id}">${t.full_name}</option>`).join('');
-                document.getElementById('class-room').innerHTML = state.rooms.map(r => `<option value="${r.id}">${r.name}</option>`).join('');
-                
-                // Also update the filter program dropdown in calendar view
-                const filterProg = document.getElementById('filter-program');
-                filterProg.innerHTML = '<option value="">All Programs</option>' + state.programs.map(p => `<option value="${p.id}">G${p.grade_level} ${p.section}</option>`).join('');
-            }
-
-            if (existingData) {
-                form.dataset.id = existingData.id;
-                document.getElementById('class-subject').value = existingData.subject;
-                document.getElementById('class-program').value = existingData.program_id;
-                document.getElementById('class-teacher').value = existingData.teacher_id;
-                document.getElementById('class-room').value = existingData.room_id;
-                document.getElementById('class-day').value = existingData.day_of_week;
-                document.getElementById('class-start').value = existingData.start_time;
-                document.getElementById('class-end').value = existingData.end_time;
-            } else {
-                delete form.dataset.id;
-            }
-
+            if (data) {
+                form.dataset.id = data.id;
+                document.getElementById('class-subject').value = data.subject;
+                document.getElementById('class-program').value = data.program_id;
+                document.getElementById('class-teacher').value = data.teacher_id;
+                document.getElementById('class-room').value = data.room_id;
+                document.getElementById('class-day').value = data.day_of_week;
+                document.getElementById('class-start').value = data.start_time;
+                document.getElementById('class-end').value = data.end_time;
+            } else delete form.dataset.id;
             modal.classList.replace('hidden', 'flex');
         }
 
         async function handleClassSubmit(e) {
             e.preventDefault();
-            const form = e.target;
             const payload = {
                 subject: document.getElementById('class-subject').value,
                 program_id: document.getElementById('class-program').value,
@@ -578,81 +525,49 @@
                 start_time: document.getElementById('class-start').value,
                 end_time: document.getElementById('class-end').value
             };
-
-            const { error } = form.dataset.id 
-                ? await supabase.from('classes').update(payload).eq('id', form.dataset.id)
-                : await supabase.from('classes').insert([payload]);
-
-            if (error) {
-                showToast('Error', error.message, 'error');
-            } else {
-                showToast('Success', 'Schedule updated successfully');
+            const id = e.target.dataset.id;
+            const { error } = id ? await supabase.from('classes').update(payload).eq('id', id) : await supabase.from('classes').insert([payload]);
+            if (!error) {
+                showToast('Success', 'Schedule saved');
                 document.getElementById('modal-class').classList.replace('flex', 'hidden');
                 state.calendar?.refetchEvents();
-            }
+            } else showToast('Error', error.message, 'error');
         }
 
-        // --- AI LOGIC ---
+        // --- AI ---
         async function handleAIChat(e) {
             e.preventDefault();
             const input = document.getElementById('ai-input');
             const msg = input.value.trim();
             if (!msg || state.isProcessingAI) return;
-
-            const chatBox = document.getElementById('chat-box');
-            chatBox.innerHTML += `<div class="chat-bubble-user p-5 rounded-2xl text-xs lg:text-sm self-end max-w-[85%] text-white font-medium">${msg}</div>`;
+            const chat = document.getElementById('chat-box');
+            chat.innerHTML += `<div class="p-4 rounded-2xl bg-indigo-600/20 self-end max-w-[80%] text-xs border border-indigo-500/20">${msg}</div>`;
             input.value = '';
-            chatBox.scrollTop = chatBox.scrollHeight;
-
             state.isProcessingAI = true;
             document.getElementById('ai-loading').classList.remove('hidden');
-
             try {
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{ parts: [{ text: `You are the BCSTEC Campus AI. User asked: ${msg}. Provide a helpful response about campus life, schedules, or staff.` }] }]
-                    })
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: `User: ${msg}. context: BCSTEC campus.` }] }] })
                 });
-
-                const data = await response.json();
-                const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "I'm having trouble connecting to my neural network.";
-                
-                document.getElementById('ai-loading').classList.add('hidden');
-                chatBox.innerHTML += `<div class="chat-bubble-bot p-5 rounded-2xl text-xs lg:text-sm self-start max-w-[85%] text-slate-300 border border-white/5 leading-relaxed">${reply}</div>`;
-                chatBox.scrollTop = chatBox.scrollHeight;
-            } catch (err) {
-                document.getElementById('ai-loading').classList.add('hidden');
-                showToast('AI Offline', 'Check your API connection', 'error');
-            } finally {
-                state.isProcessingAI = false;
-            }
+                const d = await res.json();
+                const reply = d.candidates?.[0]?.content?.parts?.[0]?.text || "System error.";
+                chat.innerHTML += `<div class="p-4 rounded-2xl bg-slate-800 self-start max-w-[85%] text-xs border border-white/5">${reply}</div>`;
+            } catch { showToast('AI Error', 'Connection failed', 'error'); }
+            finally { state.isProcessingAI = false; document.getElementById('ai-loading').classList.add('hidden'); chat.scrollTop = chat.scrollHeight; }
         }
 
-        // --- INITIALIZATION ---
+        // --- INIT ---
         window.onload = () => {
             setInterval(() => {
                 const d = new Date();
                 document.getElementById('current-time').textContent = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 document.getElementById('current-date').textContent = d.toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' });
             }, 1000);
-
-            const gradeFilter = document.getElementById('filter-grade');
-            [7,8,9,10,11,12].forEach(g => {
-                const opt = document.createElement('option');
-                opt.value = g; opt.textContent = `Grade ${g}`;
-                gradeFilter.appendChild(opt);
-            });
-
             document.getElementById('login-trigger').onclick = () => document.getElementById('modal-login').classList.replace('hidden', 'flex');
             document.querySelectorAll('.close-modal').forEach(b => b.onclick = () => b.closest('.fixed').classList.replace('flex', 'hidden'));
             document.getElementById('ai-btn').onclick = () => document.getElementById('modal-ai').classList.replace('hidden', 'flex');
             document.getElementById('mobile-ai-trigger').onclick = () => document.getElementById('modal-ai').classList.replace('hidden', 'flex');
-            
-            document.getElementById('filter-program').onchange = () => state.calendar?.refetchEvents();
-            document.getElementById('filter-grade').onchange = () => state.calendar?.refetchEvents();
-
             updateAdminUI();
             switchTab('map');
         };
