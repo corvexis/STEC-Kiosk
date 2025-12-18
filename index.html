@@ -43,15 +43,15 @@
     <div class="flex flex-grow overflow-hidden">
         <!-- SIDEBAR -->
         <aside class="w-20 md:w-64 border-r border-slate-800 bg-slate-900/30 flex flex-col p-4 gap-2">
-            <button onclick="switchTab('map')" class="sidebar-item active-tab p-3 rounded-xl flex items-center gap-3 transition">
+            <button onclick="switchTab('map', event)" class="sidebar-item active-tab p-3 rounded-xl flex items-center gap-3 transition" data-tab="map">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" stroke-width="2"></path></svg>
                 <span class="hidden md:block font-semibold">Campus Map</span>
             </button>
-            <button onclick="switchTab('calendar')" class="sidebar-item p-3 rounded-xl flex items-center gap-3 transition">
+            <button onclick="switchTab('calendar', event)" class="sidebar-item p-3 rounded-xl flex items-center gap-3 transition" data-tab="calendar">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" stroke-width="2"></path></svg>
                 <span class="hidden md:block font-semibold">Schedules</span>
             </button>
-            <button onclick="switchTab('directory')" class="sidebar-item p-3 rounded-xl flex items-center gap-3 transition">
+            <button onclick="switchTab('directory', event)" class="sidebar-item p-3 rounded-xl flex items-center gap-3 transition" data-tab="directory">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" stroke-width="2"></path></svg>
                 <span class="hidden md:block font-semibold">Directory</span>
             </button>
@@ -100,17 +100,28 @@
             </div>
             <form id="form-new-class" class="p-6 space-y-4">
                 <input type="text" id="class-subject" placeholder="Subject Name" required class="w-full bg-slate-800 border-slate-700 rounded-xl p-3 text-white">
-                <div class="grid grid-cols-2 gap-2">
-                    <select id="select-program" required class="bg-slate-800 border-slate-700 rounded-xl p-3 text-white">
+                <div class="grid grid-cols-1 gap-2">
+                    <select id="select-program" required class="w-full bg-slate-800 border-slate-700 rounded-xl p-3 text-white">
                         <option value="">Select Program/Section</option>
-                    </select>
-                    <select id="select-teacher" required class="bg-slate-800 border-slate-700 rounded-xl p-3 text-white">
-                        <option value="">Select Teacher</option>
                     </select>
                 </div>
                 <div class="grid grid-cols-2 gap-2">
-                    <input type="datetime-local" id="class-start" required class="bg-slate-800 border-slate-700 rounded-xl p-3 text-white text-sm">
-                    <input type="datetime-local" id="class-end" required class="bg-slate-800 border-slate-700 rounded-xl p-3 text-white text-sm">
+                    <select id="select-teacher" required class="bg-slate-800 border-slate-700 rounded-xl p-3 text-white">
+                        <option value="">Select Teacher</option>
+                    </select>
+                    <select id="select-room" required class="bg-slate-800 border-slate-700 rounded-xl p-3 text-white">
+                        <option value="">Select Room</option>
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div class="flex flex-col gap-1">
+                        <label class="text-[10px] uppercase font-bold text-slate-500 ml-2">Start Time</label>
+                        <input type="datetime-local" id="class-start" required class="bg-slate-800 border-slate-700 rounded-xl p-3 text-white text-sm">
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <label class="text-[10px] uppercase font-bold text-slate-500 ml-2">End Time</label>
+                        <input type="datetime-local" id="class-end" required class="bg-slate-800 border-slate-700 rounded-xl p-3 text-white text-sm">
+                    </div>
                 </div>
                 <button type="submit" class="w-full py-4 bg-pink-600 rounded-2xl font-bold">Save Schedule</button>
             </form>
@@ -173,25 +184,33 @@
                     if (!supabase) return success([{ title: 'Set up Supabase!', start: new Date().toISOString(), end: new Date().toISOString(), color: '#ec4899' }]);
                     
                     try {
+                        // FIX: Explicitly specify foreign key names to resolve relationships correctly
                         const { data, error } = await supabase
                             .from('classes')
                             .select(`
                                 id, subject, start_time, end_time,
-                                profiles(full_name),
-                                programs(grade_level, section)
+                                teacher:profiles!teacher_id(full_name),
+                                programs!program_id(grade_level, section),
+                                rooms!room_id(name)
                             `);
                         
                         if (error) throw error;
                         
                         const events = data.map(c => ({
                             id: c.id,
-                            title: `${c.subject}\n${c.programs?.grade_level}-${c.programs?.section}\n${c.profiles?.full_name || ''}`,
+                            title: `${c.subject}\n${c.programs?.grade_level}-${c.programs?.section}\n${c.rooms?.name || ''}`,
                             start: c.start_time,
                             end: c.end_time,
-                            color: '#ec4899'
+                            color: '#ec4899',
+                            extendedProps: {
+                                teacher: c.teacher?.full_name
+                            }
                         }));
                         success(events);
-                    } catch (err) { failure(err); }
+                    } catch (err) { 
+                        console.error("Calendar fetch error:", err);
+                        failure(err); 
+                    }
                 }
             });
             calendar.render();
@@ -200,34 +219,59 @@
         // Fetch Dropdown Data
         async function loadFormSelectors() {
             if (!supabase) return;
-            const teachers = await supabase.from('profiles').select('id, full_name').in('role', ['teacher', 'admin']);
-            const programs = await supabase.from('programs').select('id, name, grade_level, section');
-            
-            const teacherSelect = document.getElementById('select-teacher');
-            const programSelect = document.getElementById('select-program');
-            
-            teacherSelect.innerHTML = '<option value="">Select Teacher</option>' + 
-                teachers.data.map(t => `<option value="${t.id}">${t.full_name}</option>`).join('');
+            try {
+                const [teachersRes, programsRes, roomsRes] = await Promise.all([
+                    supabase.from('profiles').select('id, full_name').in('role', ['teacher', 'admin']),
+                    supabase.from('programs').select('id, name, grade_level, section'),
+                    supabase.from('rooms').select('id, name')
+                ]);
                 
-            programSelect.innerHTML = '<option value="">Select Program/Section</option>' + 
-                programs.data.map(p => `<option value="${p.id}">G${p.grade_level} - ${p.section}</option>`).join('');
+                const teacherSelect = document.getElementById('select-teacher');
+                const programSelect = document.getElementById('select-program');
+                const roomSelect = document.getElementById('select-room');
+                
+                teacherSelect.innerHTML = '<option value="">Select Teacher</option>' + 
+                    (teachersRes.data || []).map(t => `<option value="${t.id}">${t.full_name}</option>`).join('');
+                    
+                programSelect.innerHTML = '<option value="">Select Program/Section</option>' + 
+                    (programsRes.data || []).map(p => `<option value="${p.id}">${p.name}: G${p.grade_level} - ${p.section}</option>`).join('');
+
+                roomSelect.innerHTML = '<option value="">Select Room</option>' + 
+                    (roomsRes.data || []).map(r => `<option value="${r.id}">${r.name}</option>`).join('');
+            } catch (err) {
+                console.error("Dropdown loading failed:", err);
+            }
         }
 
-        // Tab Switching
-        function switchTab(tabId) {
+        // Tab Switching Logic
+        function switchTab(tabId, event) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
             document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active-tab'));
-            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
-            event.currentTarget.classList.add('active-tab');
+            
+            const targetTab = document.getElementById(`tab-${tabId}`);
+            if (targetTab) targetTab.classList.remove('hidden');
+
+            // Handle UI highlighting
+            let sidebarBtn;
+            if (event) {
+                sidebarBtn = event.currentTarget;
+            } else {
+                sidebarBtn = document.querySelector(`.sidebar-item[data-tab="${tabId}"]`);
+            }
+            if (sidebarBtn) sidebarBtn.classList.add('active-tab');
+
             if(tabId === 'calendar') {
                 setTimeout(() => {
-                    initCalendar();
-                    calendar.updateSize();
+                    if (!calendar) initCalendar();
+                    else {
+                        calendar.updateSize();
+                        calendar.refetchEvents();
+                    }
                 }, 100);
             }
         }
 
-        // Login Logic (Verification via profiles table)
+        // Admin Verification
         document.getElementById('form-login').onsubmit = async (e) => {
             e.preventDefault();
             const name = document.getElementById('login-user').value;
@@ -245,16 +289,16 @@
                     document.getElementById('modal-login').classList.replace('flex', 'hidden');
                     loadFormSelectors();
                 } else {
-                    alert("Verification failed. Only admins/teachers recognized in the system can enter.");
+                    alert("Verification failed. Check name spelling.");
                 }
             } else {
-                isAdmin = true; // Local bypass for testing
+                isAdmin = true;
                 updateAuthUI();
                 document.getElementById('modal-login').classList.replace('flex', 'hidden');
             }
         };
 
-        // Form Submission
+        // Class Insertion
         document.getElementById('form-new-class').onsubmit = async (e) => {
             e.preventDefault();
             const payload = {
@@ -263,20 +307,20 @@
                 end_time: document.getElementById('class-end').value,
                 teacher_id: document.getElementById('select-teacher').value,
                 program_id: document.getElementById('select-program').value,
-                room_id: "788a034d-8007-440f-9026-6d5403067676" // Placeholder Room ID
+                room_id: document.getElementById('select-room').value
             };
 
             if (supabase) {
                 const { error } = await supabase.from('classes').insert([payload]);
-                if (error) alert(error.message);
+                if (error) alert("Error: " + error.message);
                 else {
                     calendar.refetchEvents();
                     document.getElementById('modal-add-class').classList.replace('flex', 'hidden');
+                    e.target.reset();
                 }
             }
         };
 
-        // UI Helpers
         function updateAuthUI() {
             const badge = document.getElementById('status-badge');
             const authBtn = document.getElementById('auth-trigger');
