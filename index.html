@@ -25,7 +25,8 @@
             background: radial-gradient(circle at top right, #1e1b4b, #020617);
             color: #f8fafc;
             height: 100vh;
-            overflow: hidden;
+            overflow: hidden; /* Prevent body scroll, use container scroll */
+            touch-action: manipulation;
         }
 
         h1, h2, h3, .font-heading { font-family: 'Space Grotesk', sans-serif; }
@@ -33,7 +34,14 @@
         .glass { background: var(--glass-bg); backdrop-filter: blur(20px); border: 1px solid var(--glass-border); }
         .glass-card { background: rgba(30, 41, 59, 0.4); border: 1px solid rgba(255, 255, 255, 0.05); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         
-        .sidebar-link { transition: all 0.3s ease; position: relative; }
+        /* Fixed scrollable containers for mobile */
+        .scroll-container {
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+        }
+
+        .sidebar-link { transition: all 0.3s ease; position: relative; cursor: pointer; }
         .sidebar-link.active { color: white; background: linear-gradient(to right, rgba(236, 72, 153, 0.2), transparent); }
         
         @media (min-width: 1024px) {
@@ -41,6 +49,7 @@
         }
         @media (max-width: 1023px) {
             .sidebar-link.active { border-top: 3px solid var(--brand-primary); background: transparent; }
+            .fc-toolbar-chunk { display: flex; flex-wrap: wrap; justify-content: center; }
         }
 
         /* Calendar Overrides */
@@ -60,33 +69,30 @@
 
         .chat-bubble-bot { border-bottom-left-radius: 2px; background: #1e293b; }
         .chat-bubble-user { border-bottom-right-radius: 2px; background: linear-gradient(135deg, #ec4899, #8b5cf6); }
-
-        /* Animation */
-        .tab-content { transition: opacity 0.3s ease, transform 0.3s ease; }
     </style>
 </head>
 <body class="flex flex-col lg:flex-row overflow-hidden">
 
-    <!-- NAVIGATION BAR (Left on Desktop, Bottom on Mobile) -->
+    <!-- NAVIGATION BAR -->
     <nav class="order-last lg:order-first w-full lg:w-72 h-20 lg:h-full flex lg:flex-col glass border-t lg:border-t-0 lg:border-r border-white/5 z-50">
         <div class="hidden lg:block p-8 mb-4">
             <h1 class="text-2xl font-black tracking-tighter bg-gradient-to-r from-pink-500 to-violet-500 bg-clip-text text-transparent">STEC KIOSK</h1>
         </div>
 
         <div class="flex flex-row lg:flex-col flex-grow justify-around lg:justify-start lg:space-y-2 px-2 lg:px-3">
-            <button onclick="switchTab('map', event)" data-tab="map" class="sidebar-link active flex-1 lg:flex-none p-4 rounded-xl flex flex-col lg:flex-row items-center gap-1 lg:gap-4 text-slate-400 hover:text-white">
+            <button type="button" onclick="switchTab('map', event)" data-tab="map" class="sidebar-link active flex-1 lg:flex-none p-4 rounded-xl flex flex-col lg:flex-row items-center gap-1 lg:gap-4 text-slate-400 hover:text-white">
                 <i class="fa-solid fa-map-location-dot text-xl"></i>
                 <span class="text-[10px] lg:text-sm font-bold lg:font-medium">Map</span>
             </button>
-            <button onclick="switchTab('calendar', event)" data-tab="calendar" class="sidebar-link flex-1 lg:flex-none p-4 rounded-xl flex flex-col lg:flex-row items-center gap-1 lg:gap-4 text-slate-400 hover:text-white">
+            <button type="button" onclick="switchTab('calendar', event)" data-tab="calendar" class="sidebar-link flex-1 lg:flex-none p-4 rounded-xl flex flex-col lg:flex-row items-center gap-1 lg:gap-4 text-slate-400 hover:text-white">
                 <i class="fa-solid fa-calendar-days text-xl"></i>
                 <span class="text-[10px] lg:text-sm font-bold lg:font-medium">Schedules</span>
             </button>
-            <button onclick="switchTab('directory', event)" data-tab="directory" class="sidebar-link flex-1 lg:flex-none p-4 rounded-xl flex flex-col lg:flex-row items-center gap-1 lg:gap-4 text-slate-400 hover:text-white">
+            <button type="button" onclick="switchTab('directory', event)" data-tab="directory" class="sidebar-link flex-1 lg:flex-none p-4 rounded-xl flex flex-col lg:flex-row items-center gap-1 lg:gap-4 text-slate-400 hover:text-white">
                 <i class="fa-solid fa-address-book text-xl"></i>
                 <span class="text-[10px] lg:text-sm font-bold lg:font-medium">Directory</span>
             </button>
-            <button id="mobile-ai-trigger" class="lg:hidden flex-1 p-4 rounded-xl flex flex-col items-center gap-1 text-indigo-400">
+            <button type="button" id="mobile-ai-trigger" class="lg:hidden flex-1 p-4 rounded-xl flex flex-col items-center gap-1 text-indigo-400">
                 <i class="fa-solid fa-wand-magic-sparkles text-xl"></i>
                 <span class="text-[10px] font-bold">AI</span>
             </button>
@@ -96,14 +102,14 @@
             <div class="glass-card p-4 rounded-2xl mb-4">
                 <p class="text-[10px] font-black text-pink-500 uppercase mb-3 tracking-widest">Global Filter</p>
                 <div class="flex p-1 bg-slate-900/50 rounded-lg mb-3">
-                    <button onclick="setSchoolLevel('Junior High')" class="level-btn active flex-1 py-1 text-[10px] font-bold rounded-md" id="btn-jhs">JHS</button>
-                    <button onclick="setSchoolLevel('Senior High')" class="level-btn flex-1 py-1 text-[10px] font-bold rounded-md" id="btn-shs">SHS</button>
+                    <button type="button" onclick="setSchoolLevel('Junior High')" class="level-btn active flex-1 py-1 text-[10px] font-bold rounded-md" id="btn-jhs">JHS</button>
+                    <button type="button" onclick="setSchoolLevel('Senior High')" class="level-btn flex-1 py-1 text-[10px] font-bold rounded-md" id="btn-shs">SHS</button>
                 </div>
                 <select id="program-select" class="w-full bg-slate-800/50 border-none rounded-lg p-2 text-xs text-white outline-none ring-1 ring-white/10 focus:ring-pink-500">
                     <option value="all">All Sections</option>
                 </select>
             </div>
-            <button id="ai-btn" class="w-full p-4 bg-gradient-to-br from-indigo-600 to-violet-700 rounded-2xl flex items-center justify-center gap-3 font-bold hover:scale-105 transition shadow-xl group">
+            <button type="button" id="ai-btn" class="w-full p-4 bg-gradient-to-br from-indigo-600 to-violet-700 rounded-2xl flex items-center justify-center gap-3 font-bold hover:scale-105 transition shadow-xl group">
                 <i class="fa-solid fa-wand-magic-sparkles"></i>
                 <span>Ask Assistant</span>
             </button>
@@ -124,7 +130,7 @@
                     <span id="current-time" class="text-sm lg:text-lg font-bold text-white leading-none">12:00 PM</span>
                     <span id="current-date" class="text-[10px] text-slate-500 font-bold uppercase hidden lg:block">Monday, Jan 1</span>
                 </div>
-                <button id="login-trigger" class="p-2 lg:px-5 lg:py-2 glass-card rounded-xl text-xs font-bold hover:text-pink-500 transition">
+                <button type="button" id="login-trigger" class="p-2 lg:px-5 lg:py-2 glass-card rounded-xl text-xs font-bold hover:text-pink-500 transition">
                     <i class="fa-solid fa-shield-halved lg:mr-2"></i><span class="hidden lg:inline">Admin</span>
                 </button>
             </div>
@@ -133,20 +139,20 @@
         <!-- VIEW CONTAINER -->
         <div class="flex-grow relative overflow-hidden">
             <!-- MAP TAB -->
-            <div id="tab-map" class="tab-content absolute inset-0 p-4 lg:p-8 flex flex-col">
-                <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 h-full">
-                    <div class="lg:col-span-3 glass-card rounded-2xl lg:rounded-3xl relative overflow-hidden flex items-center justify-center border-dashed border-2 border-white/10">
+            <div id="tab-map" class="tab-content absolute inset-0 p-4 lg:p-8 flex flex-col scroll-container">
+                <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 h-full min-h-[500px]">
+                    <div class="lg:col-span-3 glass-card rounded-2xl lg:rounded-3xl relative overflow-hidden flex items-center justify-center border-dashed border-2 border-white/10 min-h-[300px]">
                         <div class="text-center px-4">
                             <i class="fa-solid fa-map-marked-alt text-4xl lg:text-6xl text-slate-800 mb-4"></i>
                             <p class="text-slate-500 text-sm font-medium">Interactive map optimized for touch...</p>
                         </div>
                     </div>
-                    <div class="hidden lg:flex flex-col gap-4">
+                    <div class="flex flex-col gap-4">
                         <div class="glass-card p-6 rounded-3xl">
                             <h4 class="font-bold text-white mb-4">Quick Find</h4>
                             <div class="space-y-2">
-                                <button class="w-full p-3 bg-slate-800/50 rounded-xl text-left text-sm flex items-center gap-3"><i class="fa-solid fa-flask text-blue-400"></i>Science Lab</button>
-                                <button class="w-full p-3 bg-slate-800/50 rounded-xl text-left text-sm flex items-center gap-3"><i class="fa-solid fa-book text-emerald-400"></i>Library</button>
+                                <button type="button" class="w-full p-3 bg-slate-800/50 rounded-xl text-left text-sm flex items-center gap-3"><i class="fa-solid fa-flask text-blue-400"></i>Science Lab</button>
+                                <button type="button" class="w-full p-3 bg-slate-800/50 rounded-xl text-left text-sm flex items-center gap-3"><i class="fa-solid fa-book text-emerald-400"></i>Library</button>
                             </div>
                         </div>
                     </div>
@@ -155,18 +161,12 @@
 
             <!-- CALENDAR TAB -->
             <div id="tab-calendar" class="tab-content absolute inset-0 hidden p-2 lg:p-4 flex flex-col">
-                <!-- Mobile Filter Bar -->
-                <div class="lg:hidden flex gap-2 mb-2 overflow-x-auto pb-2 shrink-0">
-                    <button onclick="setSchoolLevel('Junior High')" class="level-btn active whitespace-nowrap px-4 py-2 bg-slate-800 rounded-full text-xs font-bold border border-white/5">JHS</button>
-                    <button onclick="setSchoolLevel('Senior High')" class="level-btn whitespace-nowrap px-4 py-2 bg-slate-800 rounded-full text-xs font-bold border border-white/5">SHS</button>
+                <div class="lg:hidden flex gap-2 mb-2 overflow-x-auto pb-2 shrink-0 no-scrollbar">
+                    <button type="button" onclick="setSchoolLevel('Junior High')" class="level-btn active whitespace-nowrap px-4 py-2 bg-slate-800 rounded-full text-xs font-bold border border-white/5">JHS</button>
+                    <button type="button" onclick="setSchoolLevel('Senior High')" class="level-btn whitespace-nowrap px-4 py-2 bg-slate-800 rounded-full text-xs font-bold border border-white/5">SHS</button>
                     <select id="mobile-program-select" class="bg-slate-800 rounded-full px-4 py-2 text-xs font-bold border border-white/5 outline-none"></select>
                 </div>
-                <div class="flex-grow glass-card rounded-2xl lg:rounded-3xl p-2 lg:p-6 relative overflow-hidden">
-                    <div id="admin-tools" class="absolute top-2 right-2 lg:top-4 lg:right-4 z-10 hidden">
-                        <button id="add-schedule-btn" class="bg-pink-600 p-2 lg:px-4 lg:py-2 rounded-lg lg:rounded-xl text-xs font-bold shadow-lg flex items-center gap-2">
-                            <i class="fa-solid fa-plus"></i><span class="hidden lg:inline">New Schedule</span>
-                        </button>
-                    </div>
+                <div class="flex-grow glass-card rounded-2xl lg:rounded-3xl p-2 lg:p-6 relative overflow-hidden scroll-container">
                     <div id="calendar" class="h-full"></div>
                 </div>
             </div>
@@ -183,7 +183,7 @@
                         <input type="text" id="directory-search" placeholder="Search staff..." class="w-full sm:w-64 bg-slate-800 border-none rounded-xl lg:rounded-2xl pl-11 pr-4 py-2 lg:py-3 text-sm text-white ring-1 ring-white/10 outline-none">
                     </div>
                 </div>
-                <div id="directory-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 overflow-y-auto pr-2 pb-10">
+                <div id="directory-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 overflow-y-auto scroll-container pr-2 pb-10">
                     <!-- Cards -->
                 </div>
             </div>
@@ -193,12 +193,12 @@
     <!-- MODAL: LOGIN -->
     <div id="modal-login" class="fixed inset-0 bg-slate-950/95 backdrop-blur-xl hidden items-center justify-center z-[100] p-4">
         <div class="w-full max-w-sm glass p-8 rounded-[32px] relative">
-            <button class="close-modal absolute top-6 right-6 text-slate-500"><i class="fa-solid fa-xmark text-xl"></i></button>
+            <button type="button" class="close-modal absolute top-6 right-6 text-slate-500"><i class="fa-solid fa-xmark text-xl"></i></button>
             <div class="text-center mb-6">
                 <h3 class="text-xl font-bold text-white">Admin Access</h3>
                 <p class="text-slate-400 text-xs mt-1">Verification required</p>
             </div>
-            <form id="form-login" class="space-y-3">
+            <form id="form-login" class="space-y-3" onsubmit="handleLogin(event)">
                 <input type="text" id="login-name" placeholder="Full Name" required class="w-full bg-slate-800 p-4 rounded-xl text-white text-sm outline-none ring-1 ring-white/10 focus:ring-pink-500">
                 <input type="password" id="login-pass" placeholder="Passkey" required class="w-full bg-slate-800 p-4 rounded-xl text-white text-sm outline-none ring-1 ring-white/10 focus:ring-pink-500">
                 <button type="submit" class="w-full py-4 bg-pink-600 rounded-xl font-bold text-sm">Verify Identity</button>
@@ -208,18 +208,18 @@
 
     <!-- MODAL: AI DRAWER -->
     <div id="modal-ai" class="fixed inset-0 bg-slate-950/40 hidden justify-end z-[120]">
-        <div class="w-full max-w-md glass flex flex-col h-full lg:h-auto animate-in slide-in-from-right duration-300">
+        <div class="w-full max-w-md glass flex flex-col h-full lg:h-auto">
             <div class="p-6 border-b border-white/5 flex items-center justify-between shrink-0">
                 <div class="flex items-center gap-3">
                     <div class="w-8 h-8 bg-indigo-500 rounded-full flex items-center justify-center text-white text-xs"><i class="fa-solid fa-sparkles"></i></div>
                     <h3 class="font-bold text-white text-sm">Assistant</h3>
                 </div>
-                <button class="close-modal text-slate-500 p-2"><i class="fa-solid fa-chevron-right text-lg"></i></button>
+                <button type="button" class="close-modal text-slate-500 p-2"><i class="fa-solid fa-chevron-right text-lg"></i></button>
             </div>
-            <div id="chat-box" class="flex-grow overflow-y-auto p-6 flex flex-col gap-4 bg-slate-950/20">
+            <div id="chat-box" class="flex-grow overflow-y-auto p-6 flex flex-col gap-4 bg-slate-950/20 scroll-container">
                 <!-- Messages -->
             </div>
-            <form id="form-ai" class="p-4 bg-slate-900 border-t border-white/5 flex gap-2 shrink-0">
+            <form id="form-ai" class="p-4 bg-slate-900 border-t border-white/5 flex gap-2 shrink-0" onsubmit="handleAIChat(event)">
                 <input type="text" id="ai-input" placeholder="How can I help?" class="flex-grow bg-slate-800 rounded-xl px-4 py-3 text-sm text-white outline-none focus:ring-2 ring-indigo-500">
                 <button type="submit" class="w-12 h-12 bg-indigo-600 rounded-xl flex items-center justify-center text-white"><i class="fa-solid fa-paper-plane"></i></button>
             </form>
@@ -229,8 +229,8 @@
     <script>
         const CONFIG = {
             SUPABASE_URL: "https://nwwkgmlnnlsmbjrvcnaj.supabase.co",
-            SUPABASE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im53d2tnbWxubmxzbWJqcnZjbmFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3OTYxMDcsImV4cCI6MjA4MTM3MjEwN30.Stz0PC0XAxlAkmHpWxY9reIeVzbXaDKuiSUOrJ4HB7Y", // ADD YOUR KEY HERE
-            GEMINI_KEY: "AIzaSyCodsUAu0jPJwDCg7fnQzrRCD0ptuQyFfw" // ADD YOUR KEY HERE
+            SUPABASE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im53d2tnbWxubmxzbWJqcnZjbmFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3OTYxMDcsImV4cCI6MjA4MTM3MjEwN30.Stz0PC0XAxlAkmHpWxY9reIeVzbXaDKuiSUOrJ4HB7Y", 
+            GEMINI_KEY: "AIzaSyCodsUAu0jPJwDCg7fnQzrRCD0ptuQyFfw" 
         };
 
         const supabase = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_KEY);
@@ -251,7 +251,8 @@
             if(event) {
                 event.currentTarget.classList.add('active');
             } else {
-                document.querySelector(`[data-tab="${id}"]`).classList.add('active');
+                const btn = document.querySelector(`[data-tab="${id}"]`);
+                if(btn) btn.classList.add('active');
             }
 
             const meta = {
@@ -319,7 +320,8 @@
                 filtered.map(p => `<option value="${p.id}">${p.grade_level}-${p.section}</option>`).join('');
             
             document.getElementById('program-select').innerHTML = options;
-            document.getElementById('mobile-program-select').innerHTML = options;
+            const mobileSelect = document.getElementById('mobile-program-select');
+            if(mobileSelect) mobileSelect.innerHTML = options;
         }
 
         function setSchoolLevel(level) {
@@ -345,7 +347,45 @@
             `).join('');
         }
 
-        // AI and Auth logic remains similar but UI bound to new IDs
+        // PREVENT RESTART: Admin Login Handler
+        async function handleLogin(e) {
+            e.preventDefault();
+            const name = document.getElementById('login-name').value;
+            const pass = document.getElementById('login-pass').value;
+            
+            const { data, error } = await supabase.from('profiles').select('*').eq('full_name', name).eq('passkey', pass).single();
+            
+            if (data && (data.role === 'admin' || data.role === 'teacher')) {
+                state.isAdmin = true;
+                document.getElementById('modal-login').classList.replace('flex', 'hidden');
+                document.getElementById('login-trigger').innerHTML = `<i class="fa-solid fa-circle-check lg:mr-2"></i><span class="hidden lg:inline">Verified</span>`;
+                // Show admin tools if any
+                const tools = document.getElementById('admin-tools');
+                if(tools) tools.classList.remove('hidden');
+            } else {
+                alert("Invalid Credentials");
+            }
+        }
+
+        // PREVENT RESTART: AI Assistant Handler
+        async function handleAIChat(e) {
+            e.preventDefault();
+            const input = document.getElementById('ai-input');
+            const message = input.value.trim();
+            if (!message) return;
+
+            const chatBox = document.getElementById('chat-box');
+            chatBox.innerHTML += `<div class="chat-bubble-user p-3 rounded-2xl text-sm self-end max-w-[80%]">${message}</div>`;
+            input.value = '';
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            // Mock AI response for now
+            setTimeout(() => {
+                chatBox.innerHTML += `<div class="chat-bubble-bot p-3 rounded-2xl text-sm self-start max-w-[80%]">I'm currently being updated to use Gemini 2.5. How else can I help with the campus schedule?</div>`;
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }, 500);
+        }
+
         document.getElementById('login-trigger').onclick = () => document.getElementById('modal-login').classList.replace('hidden', 'flex');
         document.getElementById('mobile-ai-trigger').onclick = () => document.getElementById('modal-ai').classList.replace('hidden', 'flex');
         document.getElementById('ai-btn').onclick = () => document.getElementById('modal-ai').classList.replace('hidden', 'flex');
@@ -355,6 +395,7 @@
             setInterval(() => {
                 const now = new Date();
                 document.getElementById('current-time').textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                document.getElementById('current-date').textContent = now.toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' });
             }, 1000);
             
             const { data } = await supabase.from('programs').select('*').order('grade_level');
@@ -366,6 +407,18 @@
         window.onresize = () => {
             if(state.calendar) renderCalendar();
         };
+
+        // Handle mobile select changes
+        document.addEventListener('change', (e) => {
+            if(e.target.id === 'program-select' || e.target.id === 'mobile-program-select') {
+                state.program = e.target.value;
+                if(state.calendar) state.calendar.refetchEvents();
+                // Sync select boxes
+                document.getElementById('program-select').value = state.program;
+                const mSelect = document.getElementById('mobile-program-select');
+                if(mSelect) mSelect.value = state.program;
+            }
+        });
     </script>
 </body>
 </html>
