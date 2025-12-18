@@ -19,7 +19,6 @@
         .fc { --fc-border-color: rgba(255,255,255,0.05); --fc-page-bg-color: transparent; border: none !important; }
         .fc-theme-standard td, .fc-theme-standard th { border: 1px solid rgba(255,255,255,0.05) !important; }
         
-        /* Adjusted height and padding to ensure blocks are visible */
         .fc-timegrid-slot { height: 5em !important; }
         .fc-event { 
             border: none !important; 
@@ -27,7 +26,7 @@
             padding: 6px !important; 
             box-shadow: 0 4px 12px rgba(0,0,0,0.3); 
             cursor: pointer;
-            min-height: 24px; /* Prevents "red line" visual on short durations */
+            min-height: 24px;
         }
         .fc-event-main { font-weight: 600; font-size: 0.75rem; overflow: hidden; }
         
@@ -302,7 +301,6 @@
             const startVal = document.getElementById('add-start').value;
             const endVal = document.getElementById('add-end').value;
 
-            // Duration check to prevent "red lines"
             if (new Date(endVal) <= new Date(startVal)) {
                 alert("The class end time must be after the start time.");
                 return;
@@ -314,8 +312,7 @@
                 start_time: startVal,
                 end_time: endVal,
                 program_id: document.getElementById('add-program').value,
-                teacher_id: document.getElementById('add-teacher').value,
-                day_of_week: new Date(startVal).getDay()
+                teacher_id: document.getElementById('add-teacher').value
             };
 
             const { error } = await supabase.from('classes').insert([newClass]);
@@ -383,15 +380,15 @@
                 events: async (info, success, failure) => {
                     if (!supabase) return success([]);
                     try {
-                        // FIX: Changed '!' to ':' for alias-based join resolving PGRST200
+                        // FIX: Explicitly specify foreign key relation using '!' syntax to avoid PGRST200
                         let query = supabase.from('classes').select(`
                             id, 
                             subject, 
                             start_time, 
                             end_time, 
                             program_id, 
-                            profiles:teacher_id(full_name), 
-                            rooms:room_id(name)
+                            profiles!teacher_id(full_name), 
+                            rooms!room_id(name)
                         `);
 
                         if (currentProgramFilter !== 'all') {
