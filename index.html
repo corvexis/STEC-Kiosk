@@ -23,10 +23,10 @@
         .fc-event { 
             border: none !important; 
             border-radius: 8px !important; 
-            padding: 6px !important; 
+            padding: 8px !important; 
             box-shadow: 0 4px 12px rgba(0,0,0,0.3); 
             cursor: pointer;
-            min-height: 24px;
+            min-height: 30px;
         }
         .fc-event-main { font-weight: 600; font-size: 0.75rem; overflow: hidden; }
         
@@ -72,6 +72,7 @@
     </header>
 
     <div class="flex flex-grow overflow-hidden">
+        <!-- SIDEBAR -->
         <aside class="w-20 md:w-64 border-r border-slate-800 bg-slate-900/30 flex flex-col p-4 gap-2">
             <button onclick="switchTab('map', event)" class="sidebar-item active-tab p-3 rounded-xl flex items-center gap-3 transition" data-tab="map">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" stroke-width="2"></path></svg>
@@ -104,20 +105,28 @@
             </div>
         </aside>
 
+        <!-- MAIN VIEWPORT -->
         <main class="flex-grow relative bg-slate-950 overflow-hidden">
+            <!-- TAB: MAP -->
             <div id="tab-map" class="tab-content absolute inset-0 p-6 flex flex-col gap-6">
                 <h2 class="text-2xl font-extrabold text-white">Campus Navigator</h2>
-                <div class="flex-grow glass-panel rounded-3xl flex items-center justify-center text-slate-500">Interactive Map View</div>
+                <div class="flex-grow glass-panel rounded-3xl flex items-center justify-center text-slate-500 relative">
+                   <div class="text-center">
+                        <svg class="w-16 h-16 mx-auto mb-4 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" stroke-width="2"></path><path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" stroke-width="2"></path></svg>
+                        <p class="text-lg font-bold">Campus Map Interactive</p>
+                        <p class="text-sm">Room locations and navigation coming soon.</p>
+                   </div>
+                </div>
             </div>
 
+            <!-- TAB: SCHEDULE -->
             <div id="tab-calendar" class="tab-content absolute inset-0 hidden flex flex-col">
                 <div class="px-6 pt-6 flex justify-between items-center bg-slate-950">
                     <div class="flex items-center gap-4">
                         <h2 class="text-2xl font-extrabold text-white">Class Schedules</h2>
-                        <span id="active-filter-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 font-bold border border-slate-700 hidden">ALL</span>
                     </div>
                     <div id="admin-actions" class="hidden">
-                        <button id="add-class-btn" class="px-4 py-2 bg-pink-600 hover:bg-pink-700 rounded-xl font-bold transition flex items-center gap-2">
+                        <button id="add-class-btn" class="px-4 py-2 bg-pink-600 hover:bg-pink-700 rounded-xl font-bold transition flex items-center gap-2 shadow-lg shadow-pink-900/20">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" stroke-width="2"></path></svg>
                             Add Schedule
                         </button>
@@ -128,14 +137,36 @@
                 </div>
             </div>
 
-            <div id="tab-directory" class="tab-content absolute inset-0 p-6 hidden flex-col gap-6">
-                <h2 class="text-2xl font-extrabold text-white">Directory</h2>
-                <div id="directory-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 overflow-y-auto"></div>
+            <!-- TAB: DIRECTORY -->
+            <div id="tab-directory" class="tab-content absolute inset-0 p-6 hidden flex flex-col gap-6">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-2xl font-extrabold text-white">School Directory</h2>
+                    <div class="relative w-64">
+                        <input type="text" id="dir-search" placeholder="Search staff..." class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-pink-500">
+                    </div>
+                </div>
+                <div id="directory-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 overflow-y-auto pr-2 pb-10">
+                    <!-- Cards injected by JS -->
+                </div>
             </div>
         </main>
     </div>
 
-    <!-- MODAL: ADD CLASS -->
+    <!-- MODAL: ADMIN LOGIN -->
+    <div id="modal-login" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center z-[110]">
+        <div class="bg-slate-900 w-full max-w-sm rounded-3xl border border-slate-800 p-8 shadow-2xl">
+            <h3 class="text-2xl font-extrabold text-white mb-2">Admin Access</h3>
+            <p class="text-slate-400 text-sm mb-6">Enter your credentials to manage schedules.</p>
+            <form id="form-login" class="space-y-4">
+                <input type="text" id="login-name" placeholder="Full Name" required class="w-full bg-slate-800 border-none rounded-xl p-4 text-white focus:ring-2 focus:ring-pink-500 outline-none">
+                <input type="password" id="login-pass" placeholder="Passkey" required class="w-full bg-slate-800 border-none rounded-xl p-4 text-white focus:ring-2 focus:ring-pink-500 outline-none">
+                <button type="submit" class="w-full py-4 bg-pink-600 rounded-2xl font-bold hover:bg-pink-700 transition shadow-lg">Verify Identity</button>
+            </form>
+            <button class="close-modal w-full mt-4 text-slate-500 hover:text-white text-sm font-medium transition">Cancel</button>
+        </div>
+    </div>
+
+    <!-- MODAL: ADD CLASS (Restored) -->
     <div id="modal-add-class" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md hidden items-center justify-center z-[150] p-4">
         <div class="bg-slate-900 w-full max-w-lg rounded-3xl border border-slate-800 shadow-2xl overflow-hidden">
             <div class="p-6 border-b border-slate-800 flex justify-between items-center">
@@ -149,63 +180,39 @@
                         <input type="text" id="add-subject" placeholder="e.g. Mathematics" required class="w-full bg-slate-800 border-none rounded-xl p-3 text-white focus:ring-2 focus:ring-pink-500 outline-none">
                     </div>
                     <div class="space-y-2">
-                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Room / Location</label>
-                        <select id="add-room" required class="w-full bg-slate-800 border-none rounded-xl p-3 text-white focus:ring-2 focus:ring-pink-500 outline-none">
-                            <option value="">Select Room</option>
-                        </select>
+                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Room</label>
+                        <select id="add-room" required class="w-full bg-slate-800 border-none rounded-xl p-3 text-white focus:ring-2 focus:ring-pink-500 outline-none"></select>
                     </div>
                 </div>
-
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="space-y-2">
                         <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Start Time</label>
-                        <input type="datetime-local" id="add-start" required class="w-full bg-slate-800 border-none rounded-xl p-3 text-white focus:ring-2 focus:ring-pink-500 outline-none">
+                        <input type="datetime-local" id="add-start" required class="w-full bg-slate-800 border-none rounded-xl p-3 text-white outline-none">
                     </div>
                     <div class="space-y-2">
                         <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">End Time</label>
-                        <input type="datetime-local" id="add-end" required class="w-full bg-slate-800 border-none rounded-xl p-3 text-white focus:ring-2 focus:ring-pink-500 outline-none">
+                        <input type="datetime-local" id="add-end" required class="w-full bg-slate-800 border-none rounded-xl p-3 text-white outline-none">
                     </div>
                 </div>
-
                 <div class="space-y-2">
-                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Program (Grade & Section)</label>
-                    <select id="add-program" required class="w-full bg-slate-800 border-none rounded-xl p-3 text-white focus:ring-2 focus:ring-pink-500 outline-none">
-                        <option value="">Select Program</option>
-                    </select>
+                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Section / Program</label>
+                    <select id="add-program" required class="w-full bg-slate-800 border-none rounded-xl p-3 text-white focus:ring-2 focus:ring-pink-500 outline-none"></select>
                 </div>
-
                 <div class="space-y-2">
-                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Assigned Teacher</label>
-                    <select id="add-teacher" required class="w-full bg-slate-800 border-none rounded-xl p-3 text-white focus:ring-2 focus:ring-pink-500 outline-none">
-                        <option value="">Select Teacher</option>
-                    </select>
+                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Instructor</label>
+                    <select id="add-teacher" required class="w-full bg-slate-800 border-none rounded-xl p-3 text-white focus:ring-2 focus:ring-pink-500 outline-none"></select>
                 </div>
-
-                <button type="submit" class="w-full py-4 bg-gradient-to-r from-pink-600 to-violet-600 rounded-2xl font-bold hover:opacity-90 transition shadow-lg mt-4">Save to Schedule</button>
+                <button type="submit" class="w-full py-4 bg-gradient-to-r from-pink-600 to-violet-600 rounded-2xl font-bold hover:opacity-90 transition shadow-lg mt-4">Save Schedule</button>
             </form>
         </div>
     </div>
 
-    <!-- LOGIN MODAL -->
-    <div id="modal-login" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center z-[110]">
-        <div class="bg-slate-900 w-full max-w-sm rounded-3xl border border-slate-800 p-8 shadow-2xl">
-            <h3 class="text-2xl font-extrabold text-white mb-2">Admin Access</h3>
-            <p class="text-slate-400 text-sm mb-6">Enter your credentials to manage schedules.</p>
-            <form id="form-login" class="space-y-4">
-                <input type="text" id="login-name" placeholder="Full Name" required class="w-full bg-slate-800 border-none rounded-xl p-4 text-white focus:ring-2 focus:ring-pink-500 outline-none">
-                <input type="password" id="login-pass" placeholder="Passkey" required class="w-full bg-slate-800 border-none rounded-xl p-4 text-white focus:ring-2 focus:ring-pink-500 outline-none">
-                <button type="submit" class="w-full py-4 bg-pink-600 rounded-2xl font-bold hover:bg-pink-700 transition shadow-lg shadow-pink-900/20">Verify Identity</button>
-            </form>
-            <button class="close-modal w-full mt-4 text-slate-500 hover:text-white text-sm font-medium transition">Cancel</button>
-        </div>
-    </div>
-
-    <!-- AI MODAL -->
+    <!-- MODAL: AI ASSISTANT -->
     <div id="modal-ai" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md hidden items-center justify-end z-[100]">
         <div class="bg-slate-900 w-full max-w-md h-full flex flex-col border-l border-slate-800 shadow-2xl">
             <div class="p-6 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
                 <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center">
+                    <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
                         <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z" stroke-width="2"></path></svg>
                     </div>
                     <h3 class="font-bold text-white">STEC AI Assistant</h3>
@@ -213,7 +220,7 @@
                 <button class="close-modal text-slate-400 hover:text-white transition"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-width="2"></path></svg></button>
             </div>
             <div id="chat-messages" class="flex-grow overflow-y-auto p-6 flex flex-col gap-4">
-                <div class="message-bubble message-bot">Hello! I'm your STEC Smart Assistant. How can I help you today?</div>
+                <div class="message-bubble message-bot">Hello! I'm your STEC Smart Assistant. I can help you find teacher schedules or room locations. How can I help?</div>
             </div>
             <div id="typing-indicator" class="px-6 py-2 hidden">
                 <div class="message-bubble message-bot inline-flex items-center gap-1 italic text-slate-400">Thinking<span class="dot">.</span><span class="dot">.</span><span class="dot">.</span></div>
@@ -228,22 +235,20 @@
     </div>
 
     <script>
-        // --- API CONFIGURATION ---
-        const GEMINI_API_KEY = "AIzaSyCodsUAu0jPJwDCg7fnQzrRCD0ptuQyFfw"; 
+        // --- API CONFIG ---
+        const GEMINI_API_KEY = "AIzaSyCodsUAu0jPJwDCg7fnQzrRCD0ptuQyFfw"; // USER_TO_FILL
         const SUPABASE_URL = "https://nwwkgmlnnlsmbjrvcnaj.supabase.co";
-        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im53d2tnbWxubmxzbWJqcnZjbmFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3OTYxMDcsImV4cCI6MjA4MTM3MjEwN30.Stz0PC0XAxlAkmHpWxY9reIeVzbXaDKuiSUOrJ4HB7Y";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im53d2tnbWxubmxzbWJqcnZjbmFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3OTYxMDcsImV4cCI6MjA4MTM3MjEwN30.Stz0PC0XAxlAkmHpWxY9reIeVzbXaDKuiSUOrJ4HB7Y"; // USER_TO_FILL
 
-        const supabase = (SUPABASE_URL.includes("YOUR_")) ? null : window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let isAdmin = false;
         let calendar = null;
         let currentProgramFilter = 'all';
         let currentSchoolLevel = 'Junior High';
         let allPrograms = [];
-        let allRooms = [];
-        let allTeachers = [];
 
-        // --- AUTH LOGIC ---
+        // --- AUTH & ADMIN ---
         document.getElementById('auth-trigger').onclick = () => {
             if (isAdmin) location.reload();
             else document.getElementById('modal-login').classList.replace('hidden', 'flex');
@@ -253,173 +258,86 @@
             e.preventDefault();
             const name = document.getElementById('login-name').value;
             const pass = document.getElementById('login-pass').value;
-            
-            if (!supabase) {
-                alert("Supabase credentials not configured.");
-                return;
-            }
 
+            // Profiles table has id, full_name, role, passkey
             const { data, error } = await supabase.from('profiles').select('*').eq('full_name', name).eq('passkey', pass).single();
+            
             if (data && (data.role === 'admin' || data.role === 'teacher')) {
                 isAdmin = true;
                 document.getElementById('modal-login').classList.replace('flex', 'hidden');
                 document.getElementById('admin-actions').classList.remove('hidden');
                 document.getElementById('auth-trigger').textContent = 'Logout';
-                document.getElementById('status-badge').classList.replace('bg-pink-500/10', 'bg-blue-500/10');
                 document.getElementById('badge-text').textContent = 'STAFF MODE';
-                loadAdminFormData();
+                loadAdminFormOptions();
             } else {
-                alert("Invalid passkey or name.");
+                alert("Invalid passkey or credentials.");
             }
         };
 
-        // --- ADD CLASS LOGIC ---
-        document.getElementById('add-class-btn').onclick = () => {
-            document.getElementById('modal-add-class').classList.replace('hidden', 'flex');
-        };
-
-        async function loadAdminFormData() {
-            if (!supabase) return;
+        async function loadAdminFormOptions() {
             const { data: rooms } = await supabase.from('rooms').select('*');
-            allRooms = rooms || [];
-            document.getElementById('add-room').innerHTML = '<option value="">Select Room</option>' + 
-                allRooms.map(r => `<option value="${r.id}">${r.name}</option>`).join('');
-
+            document.getElementById('add-room').innerHTML = rooms.map(r => `<option value="${r.id}">${r.name}</option>`).join('');
+            
             const { data: teachers } = await supabase.from('profiles').select('*').in('role', ['admin', 'teacher']);
-            allTeachers = teachers || [];
-            document.getElementById('add-teacher').innerHTML = '<option value="">Select Teacher</option>' + 
-                allTeachers.map(t => `<option value="${t.id}">${t.full_name}</option>`).join('');
-
-            document.getElementById('add-program').innerHTML = '<option value="">Select Program</option>' + 
-                allPrograms.map(p => `<option value="${p.id}">${p.name} - Gr ${p.grade_level} (${p.section})</option>`).join('');
+            document.getElementById('add-teacher').innerHTML = teachers.map(t => `<option value="${t.id}">${t.full_name}</option>`).join('');
+            
+            document.getElementById('add-program').innerHTML = allPrograms.map(p => `<option value="${p.id}">${p.name} - Gr ${p.grade_level} (${p.section})</option>`).join('');
         }
 
         document.getElementById('form-add-class').onsubmit = async (e) => {
             e.preventDefault();
-            if (!supabase) return;
-
-            const startVal = document.getElementById('add-start').value;
-            const endVal = document.getElementById('add-end').value;
-
-            if (new Date(endVal) <= new Date(startVal)) {
-                alert("The class end time must be after the start time.");
-                return;
-            }
-
-            const newClass = {
+            const payload = {
                 subject: document.getElementById('add-subject').value,
                 room_id: document.getElementById('add-room').value,
-                start_time: startVal,
-                end_time: endVal,
+                teacher_id: document.getElementById('add-teacher').value,
                 program_id: document.getElementById('add-program').value,
-                teacher_id: document.getElementById('add-teacher').value
+                start_time: document.getElementById('add-start').value,
+                end_time: document.getElementById('add-end').value
             };
-
-            const { error } = await supabase.from('classes').insert([newClass]);
-            if (error) alert("Error saving class: " + error.message);
-            else {
+            const { error } = await supabase.from('classes').insert([payload]);
+            if (!error) {
                 document.getElementById('modal-add-class').classList.replace('flex', 'hidden');
-                document.getElementById('form-add-class').reset();
                 if (calendar) calendar.refetchEvents();
             }
         };
 
-        // --- AI CHAT LOGIC ---
-        async function fetchGemini(prompt) {
-            if (!GEMINI_API_KEY) return "AI disconnected. Please add GEMINI_API_KEY to the source code.";
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${GEMINI_API_KEY}`;
-            const systemPrompt = "You are a helpful assistant for the STEC Smart Kiosk. Help students find classes and teachers. Concise only.";
-            const payload = { contents: [{ parts: [{ text: prompt }] }], systemInstruction: { parts: [{ text: systemPrompt }] } };
-
-            let retries = 0;
-            while (retries <= 5) {
-                try {
-                    const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-                    if (response.ok) {
-                        const result = await response.json();
-                        return result.candidates?.[0]?.content?.parts?.[0]?.text || "No response generated.";
-                    }
-                    retries++;
-                    await new Promise(res => setTimeout(res, Math.pow(2, retries - 1) * 1000));
-                } catch (err) { retries++; }
-            }
-            return "Connection timeout.";
-        }
-
-        document.getElementById('form-chat').onsubmit = async (e) => {
-            e.preventDefault();
-            const input = document.getElementById('chat-input');
-            const val = input.value.trim();
-            if (!val) return;
-            addMessage(val, 'user');
-            input.value = '';
-            document.getElementById('typing-indicator').classList.remove('hidden');
-            const response = await fetchGemini(val);
-            document.getElementById('typing-indicator').classList.add('hidden');
-            addMessage(response, 'bot');
-        };
-
-        function addMessage(text, role) {
-            const div = document.createElement('div');
-            div.className = `message-bubble ${role === 'user' ? 'message-user' : 'message-bot'}`;
-            div.textContent = text;
-            const container = document.getElementById('chat-messages');
-            container.appendChild(div);
-            container.scrollTop = container.scrollHeight;
-        }
-
-        // --- CALENDAR & UI ---
+        // --- CALENDAR & FILTERS ---
         async function initCalendar() {
             const el = document.getElementById('calendar');
             if (calendar) calendar.destroy();
+            
             calendar = new FullCalendar.Calendar(el, {
                 initialView: 'timeGridDay',
                 headerToolbar: { left: 'prev,next today', center: 'title', right: 'timeGridWeek,timeGridDay' },
                 slotMinTime: '07:00:00', slotMaxTime: '18:00:00',
                 allDaySlot: false, height: 'parent', nowIndicator: true,
                 events: async (info, success, failure) => {
-                    if (!supabase) return success([]);
                     try {
-                        // FIX: Explicitly referencing the table to join on (profiles vs teacher_id)
-                        // Using specific column name inside the parentheses usually resolves PGRST200
+                        // FIX: Explicitly mapping teacher_id -> profiles join
                         let query = supabase.from('classes').select(`
-                            id, 
-                            subject, 
-                            start_time, 
-                            end_time, 
-                            program_id, 
-                            profiles(full_name), 
-                            rooms(name)
+                            id, subject, start_time, end_time,
+                            profiles:teacher_id(full_name),
+                            rooms:room_id(name)
                         `);
 
                         if (currentProgramFilter !== 'all') {
                             query = query.eq('program_id', currentProgramFilter);
                         } else {
                             const validIds = allPrograms.filter(p => p.name === currentSchoolLevel).map(p => p.id);
-                            if (validIds.length > 0) {
-                                query = query.in('program_id', validIds);
-                            } else {
-                                // If no programs found for this level, return empty
-                                return success([]);
-                            }
-                        }
-                        
-                        const { data, error } = await query;
-                        if (error) {
-                            console.error("Calendar Query Error:", error);
-                            throw error;
+                            if (validIds.length > 0) query = query.in('program_id', validIds);
+                            else return success([]);
                         }
 
-                        success(data.map(c => ({ 
-                            title: `${c.subject}\n${c.profiles?.full_name || 'Staff'}\n(${c.rooms?.name || '?'})`, 
-                            start: c.start_time, 
-                            end: c.end_time, 
-                            color: '#ec4899' 
+                        const { data, error } = await query;
+                        if (error) throw error;
+
+                        success(data.map(c => ({
+                            title: `${c.subject}\n${c.profiles?.full_name || 'Staff'}\n(${c.rooms?.name || '?'})`,
+                            start: c.start_time,
+                            end: c.end_time,
+                            color: '#ec4899'
                         })));
-                    } catch (err) { 
-                        console.error("Full Error Object:", err);
-                        failure(err); 
-                    }
+                    } catch (err) { failure(err); }
                 }
             });
             calendar.render();
@@ -436,41 +354,87 @@
 
         function renderProgramSelects() {
             const filtered = allPrograms.filter(p => p.name === currentSchoolLevel);
-            const html = filtered.map(p => `<option value="${p.id}">Gr ${p.grade_level} - ${p.section}</option>`).join('');
-            document.getElementById('sidebar-program-filter').innerHTML = '<option value="all">All Sections</option>' + html;
+            document.getElementById('sidebar-program-filter').innerHTML = '<option value="all">All Sections</option>' + 
+                filtered.map(p => `<option value="${p.id}">Gr ${p.grade_level} - ${p.section}</option>`).join('');
         }
 
-        async function loadInitialData() {
-            if (!supabase) return;
-            const { data } = await supabase.from('programs').select('*').order('grade_level');
-            allPrograms = data || [];
-            renderProgramSelects();
+        // --- DIRECTORY ---
+        async function loadDirectory() {
+            const { data } = await supabase.from('profiles').select('*').in('role', ['admin', 'teacher']).order('full_name');
+            const list = document.getElementById('directory-list');
+            list.innerHTML = (data || []).map(profile => `
+                <div class="glass-panel p-5 rounded-2xl border border-slate-800 hover:border-pink-500/50 transition cursor-pointer group">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center font-bold text-pink-500">${profile.full_name[0]}</div>
+                        <div>
+                            <h4 class="font-bold text-white group-hover:text-pink-500 transition">${profile.full_name}</h4>
+                            <p class="text-xs text-slate-500 uppercase font-bold tracking-tighter">${profile.role}</p>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
         }
 
+        // --- AI ASSISTANT ---
+        async function fetchAI(prompt) {
+            if (!GEMINI_API_KEY) return "AI disconnected. Key missing.";
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${GEMINI_API_KEY}`;
+            const system = "You are the STEC Smart Kiosk AI. Help users with schedules and school locations. Be brief.";
+            
+            try {
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], systemInstruction: { parts: [{ text: system }] } })
+                });
+                const json = await res.json();
+                return json.candidates?.[0]?.content?.parts?.[0]?.text || "No response.";
+            } catch { return "Service error."; }
+        }
+
+        document.getElementById('form-chat').onsubmit = async (e) => {
+            e.preventDefault();
+            const input = document.getElementById('chat-input');
+            const val = input.value.trim();
+            if (!val) return;
+            addMessage(val, 'user');
+            input.value = '';
+            document.getElementById('typing-indicator').classList.remove('hidden');
+            const reply = await fetchAI(val);
+            document.getElementById('typing-indicator').classList.add('hidden');
+            addMessage(reply, 'bot');
+        };
+
+        function addMessage(text, role) {
+            const div = document.createElement('div');
+            div.className = `message-bubble ${role === 'user' ? 'message-user' : 'message-bot'}`;
+            div.textContent = text;
+            const container = document.getElementById('chat-messages');
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // --- TABS & INIT ---
         function switchTab(id, e) {
             document.querySelectorAll('.tab-content').forEach(x => x.classList.add('hidden'));
             document.getElementById(`tab-${id}`).classList.remove('hidden');
             document.querySelectorAll('.sidebar-item').forEach(x => x.classList.remove('active-tab'));
             if(e) e.currentTarget.classList.add('active-tab');
-            if(id === 'calendar') {
-                setTimeout(() => { 
-                    if(!calendar) initCalendar(); 
-                    else { 
-                        calendar.updateSize(); 
-                        calendar.refetchEvents(); 
-                    } 
-                }, 100);
-            }
+            if(id === 'calendar') setTimeout(() => { if(!calendar) initCalendar(); else { calendar.updateSize(); calendar.refetchEvents(); } }, 100);
+            if(id === 'directory') loadDirectory();
         }
 
         document.querySelectorAll('.close-modal').forEach(b => b.onclick = () => b.closest('.fixed').classList.replace('flex', 'hidden'));
         document.getElementById('ai-trigger').onclick = () => document.getElementById('modal-ai').classList.replace('hidden', 'flex');
-        document.getElementById('sidebar-program-filter').onchange = (e) => {
-            currentProgramFilter = e.target.value;
-            if (calendar) calendar.refetchEvents();
-        };
+        document.getElementById('add-class-btn').onclick = () => document.getElementById('modal-add-class').classList.replace('hidden', 'flex');
+        document.getElementById('sidebar-program-filter').onchange = (e) => { currentProgramFilter = e.target.value; if(calendar) calendar.refetchEvents(); };
 
-        window.onload = () => { loadInitialData(); switchTab('map', null); };
+        window.onload = async () => {
+            const { data } = await supabase.from('programs').select('*').order('grade_level');
+            allPrograms = data || [];
+            renderProgramSelects();
+            switchTab('map');
+        };
     </script>
 </body>
-                                                                                                                                                    </html>
+</html>
