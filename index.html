@@ -35,6 +35,15 @@
         .dot { animation: typing 1.4s infinite; }
         .dot:nth-child(2) { animation-delay: 0.2s; }
         .dot:nth-child(3) { animation-delay: 0.4s; }
+
+        /* Custom Dropdown Styling */
+        select {
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            background-size: 1em;
+        }
     </style>
 </head>
 <body class="flex flex-col">
@@ -66,7 +75,16 @@
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" stroke-width="2"></path></svg>
                 <span class="hidden md:block font-semibold">Directory</span>
             </button>
-            <div class="mt-auto">
+            
+            <div class="mt-auto space-y-4">
+                <!-- NEW GRADE SELECTOR -->
+                <div class="hidden md:block px-1">
+                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 block">Filter Schedule</label>
+                    <select id="sidebar-program-filter" class="w-full bg-slate-800/50 border border-slate-700 text-sm rounded-xl p-3 text-white outline-none focus:ring-2 focus:ring-pink-500 transition cursor-pointer">
+                        <option value="all">All Sections</option>
+                    </select>
+                </div>
+
                 <button id="ai-trigger" class="w-full bg-gradient-to-br from-blue-600 to-indigo-700 p-3 rounded-xl flex items-center justify-center gap-2 font-bold hover:scale-105 transition shadow-lg">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z" stroke-width="2"></path></svg>
                     <span class="hidden md:block">Ask AI</span>
@@ -82,7 +100,10 @@
 
             <div id="tab-calendar" class="tab-content absolute inset-0 hidden flex flex-col">
                 <div class="px-6 pt-6 flex justify-between items-center bg-slate-950">
-                    <h2 class="text-2xl font-extrabold text-white">Class Schedules</h2>
+                    <div class="flex items-center gap-4">
+                        <h2 class="text-2xl font-extrabold text-white">Class Schedules</h2>
+                        <span id="active-filter-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 font-bold border border-slate-700 hidden">ALL</span>
+                    </div>
                     <div id="admin-actions" class="hidden">
                         <button id="add-class-btn" class="px-4 py-2 bg-pink-600 hover:bg-pink-700 rounded-xl font-bold transition">Add Schedule</button>
                     </div>
@@ -178,7 +199,7 @@
             url: "https://nwwkgmlnnlsmbjrvcnaj.supabase.co",
             anonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im53d2tnbWxubmxzbWJqcnZjbmFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3OTYxMDcsImV4cCI6MjA4MTM3MjEwN30.Stz0PC0XAxlAkmHpWxY9reIeVzbXaDKuiSUOrJ4HB7Y"
         };
-        const GEMINI_API_KEY = "AIzaSyALJamFpolfBxaOMWidlkZRK2dk4Gx3mH8"; // Provided at runtime
+        const GEMINI_API_KEY = "AIzaSyALJamFpolfBxaOMWidlkZRK2dk4Gx3mH8"; 
 
         const supabase = (SUPABASE_CONFIG.url.includes("YOUR_")) 
             ? null 
@@ -186,6 +207,7 @@
 
         let isAdmin = false;
         let calendar = null;
+        let currentProgramFilter = 'all';
 
         // --- CALENDAR & DATA HELPERS ---
         async function getScheduleContext() {
@@ -197,25 +219,8 @@
                     supabase.from('rooms').select('name, building, floor'),
                     supabase.from('programs').select('*')
                 ]);
-
-                return `
-                    Current Date/Time: ${new Date().toLocaleString()}
-                    
-                    Available Class Schedule:
-                    ${JSON.stringify(classes.data || [])}
-                    
-                    Staff Directory:
-                    ${JSON.stringify(profiles.data || [])}
-                    
-                    Rooms & Locations:
-                    ${JSON.stringify(rooms.data || [])}
-                    
-                    Programs:
-                    ${JSON.stringify(programs.data || [])}
-                `;
-            } catch (err) {
-                return "Error fetching real-time data.";
-            }
+                return `Current Time: ${new Date().toLocaleString()}\nSchedule: ${JSON.stringify(classes.data)}\nStaff: ${JSON.stringify(profiles.data)}`;
+            } catch (err) { return "Error fetching data."; }
         }
 
         async function initCalendar() {
@@ -234,9 +239,16 @@
                 events: async (info, success, failure) => {
                     if (!supabase) return success([]);
                     try {
-                        const { data, error } = await supabase
+                        let query = supabase
                             .from('classes')
-                            .select(`id, subject, start_time, end_time, profiles!teacher_id(full_name), rooms!room_id(name)`);
+                            .select(`id, subject, start_time, end_time, program_id, profiles!teacher_id(full_name), rooms!room_id(name)`);
+                        
+                        // Apply filter if active
+                        if (currentProgramFilter !== 'all') {
+                            query = query.eq('program_id', currentProgramFilter);
+                        }
+
+                        const { data, error } = await query;
                         if (error) throw error;
                         success(data.map(c => ({
                             id: c.id,
@@ -254,38 +266,22 @@
         // --- AI LOGIC ---
         async function callGemini(prompt) {
             const context = await getScheduleContext();
-            const systemPrompt = `
-                You are the STEC Smart Kiosk Assistant. 
-                You have access to the school's live database for classes, rooms, and staff.
-                Your goal is to help students and visitors find their way and check schedules.
-                Be concise, friendly, and accurate. 
-                If you don't know something, say you're not sure and suggest checking the directory tab.
-                
-                DATA CONTEXT:
-                ${context}
-            `;
-
+            const systemPrompt = `You are the STEC Smart Kiosk Assistant. Context:\n${context}`;
             let retryCount = 0;
             const maxRetries = 5;
-            
             while (retryCount <= maxRetries) {
                 try {
                     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${GEMINI_API_KEY}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            contents: [{ parts: [{ text: prompt }] }],
-                            systemInstruction: { parts: [{ text: systemPrompt }] }
-                        })
+                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], systemInstruction: { parts: [{ text: systemPrompt }] } })
                     });
-
                     if (!response.ok) throw new Error('API Error');
                     const result = await response.json();
-                    return result.candidates?.[0]?.content?.parts?.[0]?.text || "I'm sorry, I couldn't generate a response.";
+                    return result.candidates?.[0]?.content?.parts?.[0]?.text || "No response.";
                 } catch (err) {
-                    if (retryCount === maxRetries) return "I'm having trouble connecting to my brain right now. Please try again later.";
-                    const delay = Math.pow(2, retryCount) * 1000;
-                    await new Promise(r => setTimeout(r, delay));
+                    if (retryCount === maxRetries) return "Service error.";
+                    await new Promise(r => setTimeout(r, Math.pow(2, retryCount) * 1000));
                     retryCount++;
                 }
             }
@@ -308,14 +304,11 @@
             const input = document.getElementById('chat-input');
             const prompt = input.value.trim();
             if (!prompt) return;
-
             input.value = '';
             appendMessage(prompt, 'user');
-            
             typingIndicator.classList.remove('hidden');
             const response = await callGemini(prompt);
             typingIndicator.classList.add('hidden');
-            
             appendMessage(response, 'bot');
         };
 
@@ -323,20 +316,43 @@
         function switchTab(tabId, event) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
             document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active-tab'));
-            
             const targetTab = document.getElementById(`tab-${tabId}`);
             if (targetTab) targetTab.classList.remove('hidden');
-
-            const btn = (event && event.currentTarget) 
-                ? event.currentTarget 
-                : document.querySelector(`.sidebar-item[data-tab="${tabId}"]`);
+            const btn = (event && event.currentTarget) ? event.currentTarget : document.querySelector(`.sidebar-item[data-tab="${tabId}"]`);
             if (btn) btn.classList.add('active-tab');
-
             if(tabId === 'calendar') {
-                setTimeout(() => {
-                    if (!calendar) initCalendar();
-                    else { calendar.updateSize(); calendar.refetchEvents(); }
-                }, 100);
+                setTimeout(() => { if (!calendar) initCalendar(); else { calendar.updateSize(); calendar.refetchEvents(); } }, 100);
+            }
+        }
+
+        // POPULATE PROGRAM FILTERS
+        async function loadProgramFilters() {
+            if (!supabase) return;
+            const { data } = await supabase.from('programs').select('*').order('grade_level');
+            if (data) {
+                const sidebarSelect = document.getElementById('sidebar-program-filter');
+                const modalSelect = document.getElementById('select-program');
+                
+                const options = data.map(p => `<option value="${p.id}">Grade ${p.grade_level} - ${p.section}</option>`).join('');
+                sidebarSelect.innerHTML = '<option value="all">All Sections</option>' + options;
+                modalSelect.innerHTML = '<option value="">Select Program</option>' + options;
+
+                sidebarSelect.onchange = (e) => {
+                    currentProgramFilter = e.target.value;
+                    const badge = document.getElementById('active-filter-badge');
+                    if (currentProgramFilter === 'all') {
+                        badge.classList.add('hidden');
+                    } else {
+                        const selectedText = e.target.options[e.target.selectedIndex].text;
+                        badge.textContent = selectedText;
+                        badge.classList.remove('hidden');
+                    }
+                    if (calendar) calendar.refetchEvents();
+                    // If not on calendar tab, switch to it when filtering
+                    if (document.getElementById('tab-calendar').classList.contains('hidden')) {
+                        switchTab('calendar', null);
+                    }
+                };
             }
         }
 
@@ -366,13 +382,11 @@
 
         async function loadFormSelectors() {
             if (!supabase) return;
-            const [t, p, r] = await Promise.all([
+            const [t, r] = await Promise.all([
                 supabase.from('profiles').select('id, full_name').in('role', ['teacher', 'admin']),
-                supabase.from('programs').select('id, grade_level, section'),
                 supabase.from('rooms').select('id, name')
             ]);
             if (t.data) document.getElementById('select-teacher').innerHTML = '<option value="">Select Teacher</option>' + t.data.map(x => `<option value="${x.id}">${x.full_name}</option>`).join('');
-            if (p.data) document.getElementById('select-program').innerHTML = '<option value="">Select Program</option>' + p.data.map(x => `<option value="${x.id}">G${x.grade_level} - ${x.section}</option>`).join('');
             if (r.data) document.getElementById('select-room').innerHTML = '<option value="">Select Room</option>' + r.data.map(x => `<option value="${x.id}">${x.name}</option>`).join('');
         }
 
@@ -385,7 +399,10 @@
         document.querySelectorAll('.close-modal').forEach(btn => btn.onclick = () => btn.closest('.fixed').classList.replace('flex', 'hidden'));
         document.getElementById('ai-trigger').onclick = () => document.getElementById('modal-ai').classList.replace('hidden', 'flex');
 
-        window.onload = () => switchTab('map', null);
+        window.onload = () => {
+            switchTab('map', null);
+            loadProgramFilters();
+        };
     </script>
 </body>
 </html>
