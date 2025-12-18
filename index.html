@@ -36,7 +36,6 @@
         .dot:nth-child(2) { animation-delay: 0.2s; }
         .dot:nth-child(3) { animation-delay: 0.4s; }
 
-        /* Custom Dropdown Styling */
         select {
             appearance: none;
             background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
@@ -68,7 +67,7 @@
                 <span class="hidden md:block font-semibold">Campus Map</span>
             </button>
             <button onclick="switchTab('calendar', event)" class="sidebar-item p-3 rounded-xl flex items-center gap-3 transition" data-tab="calendar">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" stroke-width="2"></path></svg>
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2-2v12a2 2 0 002 2z" stroke-width="2"></path></svg>
                 <span class="hidden md:block font-semibold">Schedules</span>
             </button>
             <button onclick="switchTab('directory', event)" class="sidebar-item p-3 rounded-xl flex items-center gap-3 transition" data-tab="directory">
@@ -77,7 +76,6 @@
             </button>
             
             <div class="mt-auto space-y-4">
-                <!-- NEW GRADE SELECTOR -->
                 <div class="hidden md:block px-1">
                     <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 block">Filter Schedule</label>
                     <select id="sidebar-program-filter" class="w-full bg-slate-800/50 border border-slate-700 text-sm rounded-xl p-3 text-white outline-none focus:ring-2 focus:ring-pink-500 transition cursor-pointer">
@@ -178,7 +176,9 @@
                     <input type="datetime-local" id="class-start" required class="bg-slate-800 border-slate-700 rounded-xl p-3 text-white text-sm">
                     <input type="datetime-local" id="class-end" required class="bg-slate-800 border-slate-700 rounded-xl p-3 text-white text-sm">
                 </div>
-                <button type="submit" class="w-full py-4 bg-pink-600 rounded-2xl font-bold">Save Schedule</button>
+                <button type="submit" id="btn-save-class" class="w-full py-4 bg-pink-600 rounded-2xl font-bold hover:bg-pink-700 transition flex items-center justify-center gap-2">
+                    <span>Save Schedule</span>
+                </button>
             </form>
         </div>
     </div>
@@ -211,13 +211,11 @@
 
         // --- CALENDAR & DATA HELPERS ---
         async function getScheduleContext() {
-            if (!supabase) return "No database connection. The system is in offline mode.";
+            if (!supabase) return "No database connection.";
             try {
-                const [classes, profiles, rooms, programs] = await Promise.all([
-                    supabase.from('classes').select('*, teacher:profiles(full_name), rooms(name), programs(name, grade_level, section)'),
-                    supabase.from('profiles').select('full_name, role'),
-                    supabase.from('rooms').select('name, building, floor'),
-                    supabase.from('programs').select('*')
+                const [classes, profiles] = await Promise.all([
+                    supabase.from('classes').select('*, profiles!teacher_id(full_name), rooms(name), programs(grade_level, section)'),
+                    supabase.from('profiles').select('full_name, role')
                 ]);
                 return `Current Time: ${new Date().toLocaleString()}\nSchedule: ${JSON.stringify(classes.data)}\nStaff: ${JSON.stringify(profiles.data)}`;
             } catch (err) { return "Error fetching data."; }
@@ -243,7 +241,6 @@
                             .from('classes')
                             .select(`id, subject, start_time, end_time, program_id, profiles!teacher_id(full_name), rooms!room_id(name)`);
                         
-                        // Apply filter if active
                         if (currentProgramFilter !== 'all') {
                             query = query.eq('program_id', currentProgramFilter);
                         }
@@ -312,6 +309,45 @@
             appendMessage(response, 'bot');
         };
 
+        // --- NEW CLASS SAVING LOGIC ---
+        document.getElementById('form-new-class').onsubmit = async (e) => {
+            e.preventDefault();
+            if (!supabase) return alert("Database not connected.");
+
+            const btn = document.getElementById('btn-save-class');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Saving...';
+
+            const payload = {
+                subject: document.getElementById('class-subject').value,
+                program_id: document.getElementById('select-program').value,
+                teacher_id: document.getElementById('select-teacher').value,
+                room_id: document.getElementById('select-room').value,
+                start_time: new Date(document.getElementById('class-start').value).toISOString(),
+                end_time: new Date(document.getElementById('class-end').value).toISOString()
+            };
+
+            try {
+                const { error } = await supabase.from('classes').insert([payload]);
+                if (error) throw error;
+                
+                // Reset form and close modal
+                document.getElementById('form-new-class').reset();
+                document.getElementById('modal-add-class').classList.replace('flex', 'hidden');
+                
+                // Refresh calendar
+                if (calendar) calendar.refetchEvents();
+                
+            } catch (err) {
+                console.error("Save failed:", err);
+                alert("Failed to save schedule: " + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        };
+
         // --- UI & TAB LOGIC ---
         function switchTab(tabId, event) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
@@ -325,14 +361,12 @@
             }
         }
 
-        // POPULATE PROGRAM FILTERS
         async function loadProgramFilters() {
             if (!supabase) return;
             const { data } = await supabase.from('programs').select('*').order('grade_level');
             if (data) {
                 const sidebarSelect = document.getElementById('sidebar-program-filter');
                 const modalSelect = document.getElementById('select-program');
-                
                 const options = data.map(p => `<option value="${p.id}">Grade ${p.grade_level} - ${p.section}</option>`).join('');
                 sidebarSelect.innerHTML = '<option value="all">All Sections</option>' + options;
                 modalSelect.innerHTML = '<option value="">Select Program</option>' + options;
@@ -340,18 +374,13 @@
                 sidebarSelect.onchange = (e) => {
                     currentProgramFilter = e.target.value;
                     const badge = document.getElementById('active-filter-badge');
-                    if (currentProgramFilter === 'all') {
-                        badge.classList.add('hidden');
-                    } else {
-                        const selectedText = e.target.options[e.target.selectedIndex].text;
-                        badge.textContent = selectedText;
+                    if (currentProgramFilter === 'all') { badge.classList.add('hidden'); }
+                    else {
+                        badge.textContent = e.target.options[e.target.selectedIndex].text;
                         badge.classList.remove('hidden');
                     }
                     if (calendar) calendar.refetchEvents();
-                    // If not on calendar tab, switch to it when filtering
-                    if (document.getElementById('tab-calendar').classList.contains('hidden')) {
-                        switchTab('calendar', null);
-                    }
+                    if (document.getElementById('tab-calendar').classList.contains('hidden')) switchTab('calendar', null);
                 };
             }
         }
