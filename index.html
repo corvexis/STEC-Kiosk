@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>STEC Smart Kiosk | Elite Edition</title>
+    <title>BCSTEC Smart Kiosk | Elite Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/main.min.css' rel='stylesheet' />
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js'></script>
@@ -92,7 +92,7 @@
     <!-- NAVIGATION BAR -->
     <nav class="order-last lg:order-first w-full lg:w-72 h-20 lg:h-full flex lg:flex-col glass border-t lg:border-t-0 lg:border-r border-white/5 z-50 shrink-0">
         <div class="hidden lg:block p-8 mb-4">
-            <h1 class="text-2xl font-black tracking-tighter bg-gradient-to-r from-pink-500 to-violet-500 bg-clip-text text-transparent uppercase">STEC Kiosk</h1>
+            <h1 class="text-2xl font-black tracking-tighter bg-gradient-to-r from-pink-500 to-violet-500 bg-clip-text text-transparent uppercase">BCSTEC Kiosk</h1>
         </div>
 
         <div class="flex flex-row lg:flex-col flex-grow justify-around lg:justify-start lg:space-y-1 px-1 lg:px-3 overflow-hidden">
@@ -140,7 +140,7 @@
             </div>
             <button type="button" id="ai-btn" class="w-full p-4 bg-gradient-to-br from-indigo-600 to-violet-700 rounded-2xl flex items-center justify-center gap-3 font-bold hover:scale-105 transition shadow-xl">
                 <i class="fa-solid fa-wand-magic-sparkles"></i>
-                <span>Ask AI Assistant</span>
+                <span>Ask BCSTEC AI</span>
             </button>
         </div>
     </nav>
@@ -150,7 +150,7 @@
         <header class="h-16 lg:h-20 flex items-center justify-between px-4 lg:px-8 border-b border-white/5 bg-slate-950/40 backdrop-blur-md shrink-0">
             <div>
                 <h2 id="view-title" class="text-base lg:text-xl font-bold text-white leading-tight">Campus Navigator</h2>
-                <p id="view-subtitle" class="hidden lg:block text-[10px] text-slate-500 uppercase font-black tracking-widest">STEC Elite Interactive Platform</p>
+                <p id="view-subtitle" class="hidden lg:block text-[10px] text-slate-500 uppercase font-black tracking-widest">BCSTEC Elite Interactive Platform</p>
             </div>
 
             <div class="flex items-center gap-3 lg:gap-6">
@@ -222,7 +222,7 @@
                 <div class="w-16 h-16 bg-pink-500/20 rounded-2xl flex items-center justify-center text-pink-500 text-2xl mx-auto mb-4">
                     <i class="fa-solid fa-shield-halved"></i>
                 </div>
-                <h3 class="text-xl font-bold text-white">Admin Terminal</h3>
+                <h3 class="text-xl font-bold text-white">BCSTEC Admin Terminal</h3>
                 <p class="text-slate-400 text-xs mt-1 uppercase tracking-widest font-bold">Authorized Access Only</p>
             </div>
             <form id="form-login" class="space-y-4" onsubmit="handleLogin(event)">
@@ -241,7 +241,7 @@
                         <i class="fa-solid fa-robot"></i>
                     </div>
                     <div>
-                        <h3 class="font-bold text-white text-sm">STEC Smart AI</h3>
+                        <h3 class="font-bold text-white text-sm">BCSTEC Assistant</h3>
                         <p class="text-[9px] text-indigo-400 font-black uppercase tracking-widest">Gemini Engine</p>
                     </div>
                 </div>
@@ -249,14 +249,14 @@
             </div>
             <div id="chat-box" class="flex-grow overflow-y-auto p-4 lg:p-6 flex flex-col gap-4 bg-slate-950/20 scroll-container">
                 <div class="chat-bubble-bot p-4 rounded-2xl text-xs lg:text-sm self-start max-w-[85%] text-slate-300">
-                    Greetings! I am the STEC Kiosk Assistant. Need help finding a classroom?
+                    Hello! I am the official AI assistant for Bayawan City Science and Technology Education Center (BCSTEC). How can I help you navigate our campus today?
                 </div>
             </div>
             <div id="ai-loading" class="px-6 py-2 hidden shrink-0">
                 <div class="typing-dots space-x-1"><span></span><span></span><span></span></div>
             </div>
             <form id="form-ai" class="p-4 bg-slate-900 border-t border-white/5 flex gap-2 shrink-0 pb-safe" onsubmit="handleAIChat(event)">
-                <input type="text" id="ai-input" placeholder="Type a question..." class="flex-grow bg-slate-800 rounded-xl px-4 py-3 text-sm text-white outline-none focus:ring-2 ring-indigo-500 transition-all">
+                <input type="text" id="ai-input" placeholder="Ask about BCSTEC..." class="flex-grow bg-slate-800 rounded-xl px-4 py-3 text-sm text-white outline-none focus:ring-2 ring-indigo-500 transition-all">
                 <button type="submit" id="ai-send-btn" class="w-12 h-12 bg-indigo-600 hover:bg-indigo-500 transition rounded-xl flex items-center justify-center text-white shadow-lg">
                     <i class="fa-solid fa-paper-plane"></i>
                 </button>
@@ -338,9 +338,9 @@
             }
 
             const meta = {
-                map: { title: 'Campus Navigator' },
+                map: { title: 'BCSTEC Navigator' },
                 calendar: { title: 'Class Schedules' },
-                directory: { title: 'Staff Directory' }
+                directory: { title: 'BCSTEC Faculty' }
             };
             document.getElementById('view-title').textContent = meta[id].title;
 
@@ -527,7 +527,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         contents: [{ parts: [{ text: message }] }],
-                        systemInstruction: { parts: [{ text: "You are the STEC Smart Assistant. Keep responses brief and school-related." }] }
+                        systemInstruction: { parts: [{ text: "You are the BCSTEC Smart Assistant for Bayawan City Science and Technology Education Center. You help students and guests find schedules, rooms, and faculty. Keep responses brief, professional, and specific to BCSTEC. Do not refer to any other school." }] }
                     })
                 });
                 const result = await response.json();
