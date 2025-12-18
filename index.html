@@ -335,7 +335,9 @@
                             title: `${c.subject}\n${c.profiles?.full_name || 'Staff'}\n(${c.rooms?.name || '?'})`,
                             start: c.start_time,
                             end: c.end_time,
-                            color: '#ec4899'
+                            backgroundColor: '#ec4899',
+                            borderColor: '#ec4899',
+                            textColor: '#f8fafc'
                         })));
                     } catch (err) { failure(err); }
                 }
