@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>BCSTEC Smart Kiosk</title>
+    <title>BCSTEC Smart Kiosk | Elite Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/main.min.css' rel='stylesheet' />
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js'></script>
@@ -84,6 +84,19 @@
 
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        .profile-image-container {
+            width: 64px;
+            height: 64px;
+            flex-shrink: 0;
+            border-radius: 16px;
+            overflow: hidden;
+            background: rgba(236, 72, 153, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
     </style>
 </head>
 <body class="flex flex-col lg:flex-row overflow-hidden bg-slate-950">
@@ -148,7 +161,7 @@
         <header class="h-16 lg:h-20 flex items-center justify-between px-4 lg:px-8 border-b border-white/5 bg-slate-950/40 backdrop-blur-md shrink-0">
             <div>
                 <h2 id="view-title" class="text-base lg:text-xl font-bold text-white leading-tight">Campus Navigator</h2>
-                <p id="view-subtitle" class="hidden lg:block text-[10px] text-slate-500 uppercase font-black tracking-widest">BCSTEC Interactive Platform</p>
+                <p id="view-subtitle" class="hidden lg:block text-[10px] text-slate-500 uppercase font-black tracking-widest">BCSTEC Elite Interactive Platform</p>
             </div>
 
             <div class="flex items-center gap-3 lg:gap-6">
@@ -400,10 +413,9 @@
             if(state.calendar) state.calendar.refetchEvents();
         }
 
-        // --- DIRECTORY LOGIC (UPDATED) ---
+        // --- DIRECTORY LOGIC (UPDATED WITH MEDIA_URL SUPPORT) ---
 
         async function loadDirectory() {
-            // Updated Query: Show everyone except students
             const { data, error } = await supabase
                 .from('profiles')
                 .select('*')
@@ -416,22 +428,28 @@
             const searchInput = document.getElementById('directory-search');
             
             const renderGrid = (list) => {
-                grid.innerHTML = (list || []).map(p => `
-                    <div class="glass-card p-6 rounded-[32px] flex items-center gap-5 group hover:border-pink-500/30 transition-all duration-300">
-                        <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-pink-500/10 to-violet-500/10 flex items-center justify-center text-pink-500 text-xl font-bold shadow-inner group-hover:scale-110 transition-transform">
-                            ${p.full_name[0]}
+                grid.innerHTML = (list || []).map(p => {
+                    const avatarContent = p.media_url 
+                        ? `<img src="${p.media_url}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+                           <div class="hidden w-full h-full items-center justify-center text-pink-500 text-xl font-bold">${p.full_name[0]}</div>`
+                        : `<div class="w-full h-full flex items-center justify-center text-pink-500 text-xl font-bold">${p.full_name[0]}</div>`;
+
+                    return `
+                        <div class="glass-card p-5 rounded-[32px] flex items-center gap-5 group hover:border-pink-500/30 transition-all duration-300">
+                            <div class="profile-image-container">
+                                ${avatarContent}
+                            </div>
+                            <div class="flex-grow min-w-0">
+                                <h4 class="font-bold text-white text-base group-hover:text-pink-400 transition-colors truncate">${p.full_name}</h4>
+                                <p class="text-[9px] text-slate-500 font-black uppercase tracking-[0.2em] mt-1">${p.role}</p>
+                            </div>
                         </div>
-                        <div class="flex-grow">
-                            <h4 class="font-bold text-white text-base group-hover:text-pink-400 transition-colors">${p.full_name}</h4>
-                            <p class="text-[9px] text-slate-500 font-black uppercase tracking-[0.2em] mt-1">${p.role}</p>
-                        </div>
-                    </div>
-                `).join('');
+                    `;
+                }).join('');
             };
 
             renderGrid(data);
 
-            // Real-time search functionality
             searchInput.oninput = (e) => {
                 const term = e.target.value.toLowerCase();
                 const filtered = data.filter(p => 
@@ -600,7 +618,6 @@
         document.getElementById('login-trigger').onclick = () => document.getElementById('modal-login').classList.replace('hidden', 'flex');
 
         window.onload = async () => {
-            // Update clock every second
             setInterval(() => {
                 const now = new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' });
                 const d = new Date(now);
@@ -608,7 +625,6 @@
                 document.getElementById('current-date').textContent = d.toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' });
             }, 1000);
 
-            // Initial program load
             const { data } = await supabase.from('programs').select('*').order('grade_level');
             state.allPrograms = data || [];
             updateProgramSelect();
