@@ -50,7 +50,6 @@
             .sidebar-link.active { border-top: 3px solid var(--brand-primary); background: transparent; }
         }
 
-        /* Calendar Overrides */
         .fc { --fc-border-color: rgba(255, 255, 255, 0.05); font-size: 0.85rem; }
         .fc-toolbar-title { font-weight: 800 !important; font-family: 'Space Grotesk' !important; font-size: 1.1rem !important; }
         .fc-event { 
@@ -60,7 +59,6 @@
             border-radius: 6px !important;
         }
 
-        /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
@@ -68,7 +66,6 @@
         .chat-bubble-bot { border-bottom-left-radius: 2px; background: #1e293b; }
         .chat-bubble-user { border-bottom-right-radius: 2px; background: linear-gradient(135deg, #ec4899, #8b5cf6); }
 
-        /* Typing Animation */
         .typing-dots span {
             width: 4px; height: 4px; background: #94a3b8; border-radius: 50%; display: inline-block;
             animation: bounce 1.4s infinite ease-in-out both;
@@ -106,6 +103,12 @@
         </div>
 
         <div class="hidden lg:block p-4 mt-auto">
+            <div id="admin-controls" class="hidden mb-4 space-y-2">
+                <button type="button" onclick="openClassModal()" class="w-full p-4 bg-emerald-600/20 border border-emerald-500/30 rounded-2xl flex items-center justify-center gap-3 font-bold text-emerald-400 hover:bg-emerald-600/30 transition">
+                    <i class="fa-solid fa-plus-circle"></i>
+                    <span>Manage Classes</span>
+                </button>
+            </div>
             <div class="glass-card p-4 rounded-2xl mb-4">
                 <p class="text-[10px] font-black text-pink-500 uppercase mb-3 tracking-widest">Global Filter</p>
                 <div class="flex p-1 bg-slate-900/50 rounded-lg mb-3">
@@ -209,6 +212,55 @@
         </div>
     </div>
 
+    <!-- MODAL: ADD CLASS -->
+    <div id="modal-class" class="fixed inset-0 bg-slate-950/95 backdrop-blur-xl hidden items-center justify-center z-[110] p-4">
+        <div class="w-full max-w-lg glass p-8 rounded-[32px] relative scroll-container max-h-[90vh]">
+            <button type="button" class="close-modal absolute top-6 right-6 text-slate-500 hover:text-white transition"><i class="fa-solid fa-xmark text-xl"></i></button>
+            <div class="mb-6">
+                <h3 class="text-xl font-bold text-white">Schedule Class</h3>
+                <p class="text-slate-400 text-xs mt-1">Add a new session to the calendar</p>
+            </div>
+            <form id="form-class" class="grid grid-cols-1 sm:grid-cols-2 gap-4" onsubmit="handleClassSubmit(event)">
+                <div class="sm:col-span-2">
+                    <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1 ml-1">Subject Name</label>
+                    <input type="text" id="class-subject" required placeholder="e.g. Advanced Calculus" class="w-full bg-slate-800/50 p-3 rounded-xl text-white text-sm outline-none ring-1 ring-white/10 focus:ring-emerald-500">
+                </div>
+                
+                <div>
+                    <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1 ml-1">Section</label>
+                    <select id="class-program" required class="w-full bg-slate-800/50 p-3 rounded-xl text-white text-sm outline-none ring-1 ring-white/10 focus:ring-emerald-500"></select>
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1 ml-1">Room</label>
+                    <select id="class-room" required class="w-full bg-slate-800/50 p-3 rounded-xl text-white text-sm outline-none ring-1 ring-white/10 focus:ring-emerald-500"></select>
+                </div>
+
+                <div class="sm:col-span-2">
+                    <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1 ml-1">Date</label>
+                    <input type="date" id="class-date" required class="w-full bg-slate-800/50 p-3 rounded-xl text-white text-sm outline-none ring-1 ring-white/10 focus:ring-emerald-500">
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1 ml-1">Start Time</label>
+                    <input type="time" id="class-start" required class="w-full bg-slate-800/50 p-3 rounded-xl text-white text-sm outline-none ring-1 ring-white/10 focus:ring-emerald-500">
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1 ml-1">End Time</label>
+                    <input type="time" id="class-end" required class="w-full bg-slate-800/50 p-3 rounded-xl text-white text-sm outline-none ring-1 ring-white/10 focus:ring-emerald-500">
+                </div>
+
+                <div class="sm:col-span-2 pt-4">
+                    <button type="submit" class="w-full py-4 bg-emerald-600 rounded-xl font-bold text-sm hover:bg-emerald-500 transition shadow-lg flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-calendar-plus"></i>
+                        Confirm Schedule
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- MODAL: AI DRAWER -->
     <div id="modal-ai" class="fixed inset-0 bg-slate-950/40 hidden justify-end z-[120]">
         <div class="w-full max-w-md glass flex flex-col h-full lg:h-auto shadow-2xl">
@@ -252,18 +304,22 @@
         const supabase = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_KEY);
         
         let state = {
+            user: null,
             isAdmin: false,
             calendar: null,
             level: 'Junior High',
             program: 'all',
             allPrograms: [],
+            rooms: [],
             chatHistory: []
         };
 
         // --- CORE UI FUNCTIONS ---
         function switchTab(id, event) {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
-            document.getElementById(`tab-${id}`).classList.remove('hidden');
+            const target = document.getElementById(`tab-${id}`);
+            if(target) target.classList.remove('hidden');
+            
             document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
             
             if(event) {
@@ -297,7 +353,7 @@
             state.calendar = new FullCalendar.Calendar(el, {
                 initialView: isMobile ? 'listDay' : 'timeGridDay',
                 headerToolbar: { 
-                    left: 'prev,next', 
+                    left: 'prev,next today', 
                     center: 'title', 
                     right: isMobile ? '' : 'timeGridDay,timeGridWeek' 
                 },
@@ -374,9 +430,11 @@
             const { data, error } = await supabase.from('profiles').select('*').eq('full_name', name).eq('passkey', pass).single();
             
             if (data && (data.role === 'admin' || data.role === 'teacher')) {
+                state.user = data;
                 state.isAdmin = true;
                 document.getElementById('modal-login').classList.replace('flex', 'hidden');
                 document.getElementById('login-trigger').innerHTML = `<i class="fa-solid fa-circle-check lg:mr-2"></i><span class="hidden lg:inline">Verified</span>`;
+                document.getElementById('admin-controls').classList.remove('hidden');
             } else {
                 const originalBtn = e.target.querySelector('button');
                 originalBtn.textContent = "Invalid Passkey";
@@ -388,14 +446,75 @@
             }
         }
 
-        // --- AI ASSISTANT WITH GEMINI 2.5 FLASH ---
+        // --- CLASS MANAGEMENT ---
+        async function openClassModal() {
+            // Load programs and rooms if not already loaded or for freshness
+            const [progRes, roomRes] = await Promise.all([
+                supabase.from('programs').select('*').order('grade_level'),
+                supabase.from('rooms').select('*').order('name')
+            ]);
+            
+            state.allPrograms = progRes.data || [];
+            state.rooms = roomRes.data || [];
+
+            document.getElementById('class-program').innerHTML = state.allPrograms.map(p => `<option value="${p.id}">${p.name} - Gr. ${p.grade_level} ${p.section}</option>`).join('');
+            document.getElementById('class-room').innerHTML = state.rooms.map(r => `<option value="${r.id}">${r.name} (${r.building})</option>`).join('');
+
+            document.getElementById('modal-class').classList.replace('hidden', 'flex');
+        }
+
+        async function handleClassSubmit(e) {
+            e.preventDefault();
+            const btn = e.target.querySelector('button');
+            const originalHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-circle-notch animate-spin"></i> Saving...`;
+
+            const dateStr = document.getElementById('class-date').value;
+            const startStr = document.getElementById('class-start').value;
+            const endStr = document.getElementById('class-end').value;
+
+            const start = new Date(`${dateStr}T${startStr}`);
+            const end = new Date(`${dateStr}T${endStr}`);
+
+            const payload = {
+                subject: document.getElementById('class-subject').value,
+                program_id: document.getElementById('class-program').value,
+                room_id: document.getElementById('class-room').value,
+                teacher_id: state.user.id,
+                start_time: start.toISOString(),
+                end_time: end.toISOString(),
+                day_of_week: start.getDay()
+            };
+
+            const { error } = await supabase.from('classes').insert([payload]);
+
+            if (error) {
+                console.error(error);
+                btn.classList.replace('bg-emerald-600', 'bg-red-600');
+                btn.textContent = "Error Saving";
+            } else {
+                btn.classList.replace('bg-emerald-600', 'bg-blue-600');
+                btn.textContent = "Success!";
+                setTimeout(() => {
+                    document.getElementById('modal-class').classList.replace('flex', 'hidden');
+                    if(state.calendar) state.calendar.refetchEvents();
+                    e.target.reset();
+                }, 1000);
+            }
+
+            setTimeout(() => {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+                btn.classList.remove('bg-red-600', 'bg-blue-600');
+                btn.classList.add('bg-emerald-600');
+            }, 1500);
+        }
+
+        // --- AI ASSISTANT ---
         async function callGemini(userQuery) {
             const systemPrompt = `You are the STEC Smart Assistant. You help students and staff at Science and Technology Education Center (STEC). 
-            Current context:
-            - School Levels: Junior High (JHS) and Senior High (SHS).
-            - Available Sections: Silver, Tungsten, Gold, Nickel, Pasteur, Archimedes, etc.
-            - You can provide information about campus navigation and schedules.
-            - Keep answers concise and helpful.`;
+            Context: Levels: JHS/SHS. Sections: Silver, Gold, Pasteur, etc. Concise help only.`;
 
             let retries = 0;
             const delays = [1000, 2000, 4000, 8000, 16000];
@@ -409,7 +528,6 @@
                         systemInstruction: { parts: [{ text: systemPrompt }] }
                     })
                 });
-
                 if (!response.ok) throw new Error('API Error');
                 return response.json();
             };
@@ -419,7 +537,7 @@
                     const result = await fetchResponse();
                     return result.candidates?.[0]?.content?.parts?.[0]?.text || "I'm sorry, I couldn't process that.";
                 } catch (err) {
-                    if (retries === 4) return "Connection error. Please try again later.";
+                    if (retries === 4) return "Connection error.";
                     await new Promise(r => setTimeout(r, delays[retries]));
                     retries++;
                 }
@@ -436,28 +554,23 @@
             const loading = document.getElementById('ai-loading');
             const sendBtn = document.getElementById('ai-send-btn');
 
-            // Add user message
             chatBox.innerHTML += `<div class="chat-bubble-user p-4 rounded-2xl text-sm self-end max-w-[85%] text-white shadow-md">${message}</div>`;
             input.value = '';
             chatBox.scrollTop = chatBox.scrollHeight;
 
-            // UI Loading State
             loading.classList.remove('hidden');
             sendBtn.disabled = true;
-            sendBtn.classList.add('opacity-50');
 
             const responseText = await callGemini(message);
 
             loading.classList.add('hidden');
             sendBtn.disabled = false;
-            sendBtn.classList.remove('opacity-50');
 
-            // Add AI response
             chatBox.innerHTML += `<div class="chat-bubble-bot p-4 rounded-2xl text-sm self-start max-w-[85%] text-slate-300 shadow-md border border-white/5">${responseText}</div>`;
             chatBox.scrollTop = chatBox.scrollHeight;
         }
 
-        // --- EVENT LISTENERS ---
+        // --- INITIALIZATION ---
         document.getElementById('login-trigger').onclick = () => document.getElementById('modal-login').classList.replace('hidden', 'flex');
         document.getElementById('mobile-ai-trigger').onclick = () => document.getElementById('modal-ai').classList.replace('hidden', 'flex');
         document.getElementById('ai-btn').onclick = () => document.getElementById('modal-ai').classList.replace('hidden', 'flex');
