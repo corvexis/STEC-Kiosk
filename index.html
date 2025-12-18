@@ -2,8 +2,8 @@
 <html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>BCSTEC Smart Kiosk</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>STEC Smart Kiosk | Elite Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/main.min.css' rel='stylesheet' />
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js'></script>
@@ -25,7 +25,6 @@
             background: radial-gradient(circle at top right, #1e1b4b, #020617);
             color: #f8fafc;
             height: 100vh;
-            height: 100dvh;
             overflow: hidden;
             touch-action: manipulation;
         }
@@ -41,8 +40,6 @@
             scrollbar-width: thin;
         }
 
-        .sidebar-link span { white-space: nowrap; }
-
         .sidebar-link { transition: all 0.3s ease; position: relative; cursor: pointer; }
         .sidebar-link.active { color: white; background: linear-gradient(to right, rgba(236, 72, 153, 0.2), transparent); }
         
@@ -53,13 +50,13 @@
             .sidebar-link.active { border-top: 3px solid var(--brand-primary); background: transparent; }
         }
 
-        .fc { --fc-border-color: rgba(255, 255, 255, 0.05); font-size: 0.8rem; }
-        .fc-toolbar-title { font-weight: 800 !important; font-family: 'Space Grotesk' !important; font-size: 1rem !important; }
+        .fc { --fc-border-color: rgba(255, 255, 255, 0.05); font-size: 0.85rem; }
+        .fc-toolbar-title { font-weight: 800 !important; font-family: 'Space Grotesk' !important; font-size: 1.1rem !important; }
         .fc-event { 
             border: none !important; 
             background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary)) !important;
-            padding: 1px 2px !important;
-            border-radius: 4px !important;
+            padding: 2px 4px !important;
+            border-radius: 6px !important;
         }
 
         ::-webkit-scrollbar { width: 4px; }
@@ -77,50 +74,41 @@
         .typing-dots span:nth-child(2) { animation-delay: -0.16s; }
         @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1.0); } }
         
+        /* Level Toggle Highlighting */
         .level-btn.active { 
             background-color: var(--brand-primary) !important; 
             color: white !important;
             box-shadow: 0 4px 12px rgba(236, 72, 153, 0.3);
         }
-
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
-<body class="flex flex-col lg:flex-row overflow-hidden bg-slate-950">
+<body class="flex flex-col lg:flex-row overflow-hidden">
 
     <!-- NAVIGATION BAR -->
-    <nav class="order-last lg:order-first w-full lg:w-72 h-20 lg:h-full flex lg:flex-col glass border-t lg:border-t-0 lg:border-r border-white/5 z-50 shrink-0">
+    <nav class="order-last lg:order-first w-full lg:w-72 h-20 lg:h-full flex lg:flex-col glass border-t lg:border-t-0 lg:border-r border-white/5 z-50">
         <div class="hidden lg:block p-8 mb-4">
-            <h1 class="text-2xl font-black tracking-tighter bg-gradient-to-r from-pink-500 to-violet-500 bg-clip-text text-transparent uppercase">BCSTEC Kiosk</h1>
+            <h1 class="text-2xl font-black tracking-tighter bg-gradient-to-r from-pink-500 to-violet-500 bg-clip-text text-transparent">STEC KIOSK</h1>
         </div>
 
-        <div class="flex flex-row lg:flex-col flex-grow justify-around lg:justify-start lg:space-y-1 px-1 lg:px-3 overflow-hidden">
-            <button type="button" onclick="switchTab('map', event)" data-tab="map" class="sidebar-link active flex-1 lg:flex-none p-3 lg:p-4 rounded-xl flex flex-col lg:flex-row items-center gap-1 lg:gap-4 text-slate-400 hover:text-white">
-                <i class="fa-solid fa-map-location-dot text-lg lg:text-xl"></i>
-                <span class="text-[9px] lg:text-sm font-bold lg:font-medium">Map</span>
+        <div class="flex flex-row lg:flex-col flex-grow justify-around lg:justify-start lg:space-y-2 px-2 lg:px-3">
+            <button type="button" onclick="switchTab('map', event)" data-tab="map" class="sidebar-link active flex-1 lg:flex-none p-4 rounded-xl flex flex-col lg:flex-row items-center gap-1 lg:gap-4 text-slate-400 hover:text-white">
+                <i class="fa-solid fa-map-location-dot text-xl"></i>
+                <span class="text-[10px] lg:text-sm font-bold lg:font-medium">Map</span>
             </button>
-            <button type="button" onclick="switchTab('calendar', event)" data-tab="calendar" class="sidebar-link flex-1 lg:flex-none p-3 lg:p-4 rounded-xl flex flex-col lg:flex-row items-center gap-1 lg:gap-4 text-slate-400 hover:text-white">
-                <i class="fa-solid fa-calendar-days text-lg lg:text-xl"></i>
-                <span class="text-[9px] lg:text-sm font-bold lg:font-medium">Schedules</span>
+            <button type="button" onclick="switchTab('calendar', event)" data-tab="calendar" class="sidebar-link flex-1 lg:flex-none p-4 rounded-xl flex flex-col lg:flex-row items-center gap-1 lg:gap-4 text-slate-400 hover:text-white">
+                <i class="fa-solid fa-calendar-days text-xl"></i>
+                <span class="text-[10px] lg:text-sm font-bold lg:font-medium">Schedules</span>
             </button>
-            <button type="button" onclick="switchTab('directory', event)" data-tab="directory" class="sidebar-link flex-1 lg:flex-none p-3 lg:p-4 rounded-xl flex flex-col lg:flex-row items-center gap-1 lg:gap-4 text-slate-400 hover:text-white">
-                <i class="fa-solid fa-address-book text-lg lg:text-xl"></i>
-                <span class="text-[9px] lg:text-sm font-bold lg:font-medium">Staff</span>
+            <button type="button" onclick="switchTab('directory', event)" data-tab="directory" class="sidebar-link flex-1 lg:flex-none p-4 rounded-xl flex flex-col lg:flex-row items-center gap-1 lg:gap-4 text-slate-400 hover:text-white">
+                <i class="fa-solid fa-address-book text-xl"></i>
+                <span class="text-[10px] lg:text-sm font-bold lg:font-medium">Directory</span>
             </button>
-            
-            <!-- Mobile Specific Buttons -->
-            <button type="button" id="mobile-admin-btn" onclick="openClassModal()" class="hidden flex-1 p-3 rounded-xl flex flex-col items-center gap-1 text-emerald-400">
-                <i class="fa-solid fa-plus-circle text-lg"></i>
-                <span class="text-[9px] font-bold">Manage</span>
-            </button>
-            <button type="button" id="mobile-ai-trigger" class="lg:hidden flex-1 p-3 rounded-xl flex flex-col items-center gap-1 text-indigo-400">
-                <i class="fa-solid fa-wand-magic-sparkles text-lg"></i>
-                <span class="text-[9px] font-bold">AI Help</span>
+            <button type="button" id="mobile-ai-trigger" class="lg:hidden flex-1 p-4 rounded-xl flex flex-col items-center gap-1 text-indigo-400">
+                <i class="fa-solid fa-wand-magic-sparkles text-xl"></i>
+                <span class="text-[10px] font-bold">AI</span>
             </button>
         </div>
 
-        <!-- Desktop Footer Section (Sidebar only) -->
         <div class="hidden lg:block p-4 mt-auto">
             <div id="admin-controls" class="hidden mb-4 space-y-2">
                 <button type="button" onclick="openClassModal()" class="w-full p-4 bg-emerald-600/20 border border-emerald-500/30 rounded-2xl flex items-center justify-center gap-3 font-bold text-emerald-400 hover:bg-emerald-600/30 transition">
@@ -138,125 +126,173 @@
                     <option value="all">All Sections</option>
                 </select>
             </div>
-            <button type="button" id="ai-btn" class="w-full p-4 bg-gradient-to-br from-indigo-600 to-violet-700 rounded-2xl flex items-center justify-center gap-3 font-bold hover:scale-105 transition shadow-xl">
+            <button type="button" id="ai-btn" class="w-full p-4 bg-gradient-to-br from-indigo-600 to-violet-700 rounded-2xl flex items-center justify-center gap-3 font-bold hover:scale-105 transition shadow-xl group">
                 <i class="fa-solid fa-wand-magic-sparkles"></i>
-                <span>Ask BCSTEC AI</span>
+                <span>Ask Assistant</span>
             </button>
         </div>
     </nav>
 
-    <!-- MAIN CONTENT AREA -->
-    <main class="flex-grow flex flex-col relative overflow-hidden h-[calc(100dvh-80px)] lg:h-screen">
+    <!-- MAIN CONTENT -->
+    <main class="flex-grow flex flex-col relative overflow-hidden h-[calc(100vh-80px)] lg:h-screen">
         <header class="h-16 lg:h-20 flex items-center justify-between px-4 lg:px-8 border-b border-white/5 bg-slate-950/40 backdrop-blur-md shrink-0">
-            <div>
-                <h2 id="view-title" class="text-base lg:text-xl font-bold text-white leading-tight">Campus Navigator</h2>
-                <p id="view-subtitle" class="hidden lg:block text-[10px] text-slate-500 uppercase font-black tracking-widest">BCSTEC Elite Interactive Platform</p>
+            <div id="page-title-box">
+                <h2 id="view-title" class="text-lg lg:text-xl font-bold text-white leading-tight">Campus Navigator</h2>
+                <p id="view-subtitle" class="hidden lg:block text-[10px] text-slate-500 uppercase font-black tracking-widest">Interactive Map & Room Finder</p>
             </div>
 
             <div class="flex items-center gap-3 lg:gap-6">
-                <div class="flex flex-col items-end">
+                <div class="hidden sm:flex flex-col items-end">
                     <span id="current-time" class="text-sm lg:text-lg font-bold text-white leading-none">12:00 PM</span>
-                    <span id="current-date" class="text-[9px] text-slate-500 font-bold uppercase hidden sm:block">Monday, Jan 1</span>
+                    <span id="current-date" class="text-[10px] text-slate-500 font-bold uppercase hidden lg:block">Monday, Jan 1</span>
                 </div>
-                <button type="button" id="login-trigger" class="p-2 lg:px-5 lg:py-2 glass-card rounded-xl text-[10px] lg:text-xs font-bold hover:text-pink-500 transition">
+                <button type="button" id="login-trigger" class="p-2 lg:px-5 lg:py-2 glass-card rounded-xl text-xs font-bold hover:text-pink-500 transition">
                     <i class="fa-solid fa-shield-halved lg:mr-2"></i><span class="hidden lg:inline">Admin</span>
                 </button>
             </div>
         </header>
 
         <div class="flex-grow relative overflow-hidden">
-            <!-- TABS (Map, Calendar, Directory) -->
-            <div id="tab-map" class="tab-content absolute inset-0 p-3 lg:p-8 flex flex-col scroll-container">
-                <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 h-full">
-                    <div class="lg:col-span-3 glass-card rounded-2xl lg:rounded-3xl relative overflow-hidden flex items-center justify-center border-dashed border-2 border-white/10 min-h-[240px]">
+            <!-- MAP TAB -->
+            <div id="tab-map" class="tab-content absolute inset-0 p-4 lg:p-8 flex flex-col scroll-container">
+                <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 h-full min-h-[500px]">
+                    <div class="lg:col-span-3 glass-card rounded-2xl lg:rounded-3xl relative overflow-hidden flex items-center justify-center border-dashed border-2 border-white/10 min-h-[300px]">
                         <div class="text-center px-4">
                             <i class="fa-solid fa-map-marked-alt text-4xl lg:text-6xl text-slate-800 mb-4"></i>
-                            <p class="text-slate-500 text-xs lg:text-sm font-medium">Interactive Floor Plan loading...</p>
+                            <p class="text-slate-500 text-sm font-medium">Interactive map optimized for touch...</p>
                         </div>
                     </div>
-                    <div class="flex flex-col gap-3">
-                        <div class="glass-card p-4 lg:p-6 rounded-2xl lg:rounded-3xl">
-                            <h4 class="font-bold text-white text-sm mb-3">Quick Search</h4>
+                    <div class="flex flex-col gap-4">
+                        <div class="glass-card p-6 rounded-3xl">
+                            <h4 class="font-bold text-white mb-4">Quick Find</h4>
                             <div class="space-y-2">
-                                <button type="button" class="w-full p-3 bg-slate-800/40 rounded-xl text-left text-xs flex items-center gap-3"><i class="fa-solid fa-flask text-blue-400"></i>Science Lab</button>
-                                <button type="button" class="w-full p-3 bg-slate-800/40 rounded-xl text-left text-xs flex items-center gap-3"><i class="fa-solid fa-book text-emerald-400"></i>Library</button>
-                                <button type="button" class="w-full p-3 bg-slate-800/40 rounded-xl text-left text-xs flex items-center gap-3"><i class="fa-solid fa-laptop-code text-indigo-400"></i>IT Room</button>
+                                <button type="button" class="w-full p-3 bg-slate-800/50 rounded-xl text-left text-sm flex items-center gap-3"><i class="fa-solid fa-flask text-blue-400"></i>Science Lab</button>
+                                <button type="button" class="w-full p-3 bg-slate-800/50 rounded-xl text-left text-sm flex items-center gap-3"><i class="fa-solid fa-book text-emerald-400"></i>Library</button>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div id="tab-calendar" class="tab-content absolute inset-0 hidden p-2 lg:p-6 flex flex-col">
-                <div class="lg:hidden flex gap-2 mb-3 overflow-x-auto pb-1 no-scrollbar shrink-0">
-                    <button type="button" onclick="setSchoolLevel('Junior High')" class="level-btn active whitespace-nowrap px-4 py-2 bg-slate-900 border border-white/5 rounded-full text-[10px] font-bold" data-level="Junior High">JHS</button>
-                    <button type="button" onclick="setSchoolLevel('Senior High')" class="level-btn whitespace-nowrap px-4 py-2 bg-slate-900 border border-white/5 rounded-full text-[10px] font-bold" data-level="Senior High">SHS</button>
-                    <select id="mobile-program-select" class="bg-slate-900 border border-white/5 rounded-full px-4 py-2 text-[10px] font-bold outline-none min-w-[120px] text-white"></select>
+            <!-- CALENDAR TAB -->
+            <div id="tab-calendar" class="tab-content absolute inset-0 hidden p-2 lg:p-4 flex flex-col">
+                <div class="lg:hidden flex gap-2 mb-2 overflow-x-auto pb-2 shrink-0 no-scrollbar">
+                    <button type="button" onclick="setSchoolLevel('Junior High')" class="level-btn active whitespace-nowrap px-4 py-2 bg-slate-800 rounded-full text-xs font-bold border border-white/5" data-level="Junior High">JHS</button>
+                    <button type="button" onclick="setSchoolLevel('Senior High')" class="level-btn whitespace-nowrap px-4 py-2 bg-slate-800 rounded-full text-xs font-bold border border-white/5" data-level="Senior High">SHS</button>
+                    <select id="mobile-program-select" class="bg-slate-800 rounded-full px-4 py-2 text-xs font-bold border border-white/5 outline-none"></select>
                 </div>
-                <div class="flex-grow glass-card rounded-2xl lg:rounded-3xl p-1 lg:p-4 overflow-hidden relative">
-                    <div id="calendar" class="h-full w-full"></div>
+                <div class="flex-grow glass-card rounded-2xl lg:rounded-3xl p-2 lg:p-6 relative overflow-hidden scroll-container">
+                    <div id="calendar" class="h-full"></div>
                 </div>
             </div>
 
+            <!-- DIRECTORY TAB -->
             <div id="tab-directory" class="tab-content absolute inset-0 hidden p-4 lg:p-8 flex flex-col">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 shrink-0">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 shrink-0">
                     <div>
-                        <h3 class="text-lg lg:text-2xl font-bold text-white">Faculty Directory</h3>
-                        <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Academic Personnel</p>
+                        <h3 class="text-xl lg:text-2xl font-bold text-white">Faculty & Staff</h3>
+                        <p class="text-xs text-slate-500">Academic personnel directory</p>
                     </div>
                     <div class="relative">
                         <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></i>
-                        <input type="text" id="directory-search" placeholder="Search teacher..." class="w-full sm:w-64 bg-slate-800/50 border-none rounded-xl pl-11 pr-4 py-2 text-sm text-white ring-1 ring-white/10 outline-none">
+                        <input type="text" id="directory-search" placeholder="Search staff..." class="w-full sm:w-64 bg-slate-800 border-none rounded-xl lg:rounded-2xl pl-11 pr-4 py-2 lg:py-3 text-sm text-white ring-1 ring-white/10 outline-none">
                     </div>
                 </div>
-                <div id="directory-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 overflow-y-auto scroll-container pb-20"></div>
+                <div id="directory-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 overflow-y-auto scroll-container pr-2 pb-10"></div>
             </div>
         </div>
     </main>
 
-    <!-- MODALS -->
-    <div id="modal-login" class="fixed inset-0 bg-slate-950/90 backdrop-blur-xl hidden items-center justify-center z-[100] p-4">
-        <div class="w-full max-w-sm glass p-6 lg:p-8 rounded-[32px] relative shadow-2xl">
+    <!-- MODAL: LOGIN -->
+    <div id="modal-login" class="fixed inset-0 bg-slate-950/95 backdrop-blur-xl hidden items-center justify-center z-[100] p-4">
+        <div class="w-full max-w-sm glass p-8 rounded-[32px] relative">
             <button type="button" class="close-modal absolute top-6 right-6 text-slate-500 hover:text-white transition"><i class="fa-solid fa-xmark text-xl"></i></button>
             <div class="text-center mb-6">
-                <div class="w-16 h-16 bg-pink-500/20 rounded-2xl flex items-center justify-center text-pink-500 text-2xl mx-auto mb-4">
-                    <i class="fa-solid fa-shield-halved"></i>
-                </div>
-                <h3 class="text-xl font-bold text-white">BCSTEC Admin Terminal</h3>
-                <p class="text-slate-400 text-xs mt-1 uppercase tracking-widest font-bold">Authorized Access Only</p>
+                <h3 class="text-xl font-bold text-white">Admin Access</h3>
+                <p class="text-slate-400 text-xs mt-1">Verification required</p>
             </div>
-            <form id="form-login" class="space-y-4" onsubmit="handleLogin(event)">
-                <input type="text" id="login-name" placeholder="Full Name" required class="w-full bg-slate-900 p-4 rounded-xl text-white text-sm outline-none ring-1 ring-white/10 focus:ring-pink-500 shadow-inner">
-                <input type="password" id="login-pass" placeholder="Passkey" required class="w-full bg-slate-900 p-4 rounded-xl text-white text-sm outline-none ring-1 ring-white/10 focus:ring-pink-500 shadow-inner">
-                <button type="submit" class="w-full py-4 bg-pink-600 rounded-xl font-bold text-sm hover:bg-pink-500 transition shadow-lg text-white">Unlock Admin Tools</button>
+            <form id="form-login" class="space-y-3" onsubmit="handleLogin(event)">
+                <input type="text" id="login-name" placeholder="Full Name" required class="w-full bg-slate-800 p-4 rounded-xl text-white text-sm outline-none ring-1 ring-white/10 focus:ring-pink-500">
+                <input type="password" id="login-pass" placeholder="Passkey" required class="w-full bg-slate-800 p-4 rounded-xl text-white text-sm outline-none ring-1 ring-white/10 focus:ring-pink-500">
+                <button type="submit" class="w-full py-4 bg-pink-600 rounded-xl font-bold text-sm hover:bg-pink-500 transition shadow-lg">Verify Identity</button>
             </form>
         </div>
     </div>
 
+    <!-- MODAL: ADD CLASS -->
+    <div id="modal-class" class="fixed inset-0 bg-slate-950/95 backdrop-blur-xl hidden items-center justify-center z-[110] p-4">
+        <div class="w-full max-w-lg glass p-8 rounded-[32px] relative scroll-container max-h-[90vh]">
+            <button type="button" class="close-modal absolute top-6 right-6 text-slate-500 hover:text-white transition"><i class="fa-solid fa-xmark text-xl"></i></button>
+            <div class="mb-6">
+                <h3 class="text-xl font-bold text-white">Schedule Class</h3>
+                <p class="text-slate-400 text-xs mt-1">Add a new session to the calendar</p>
+            </div>
+            <form id="form-class" class="grid grid-cols-1 sm:grid-cols-2 gap-4" onsubmit="handleClassSubmit(event)">
+                <div class="sm:col-span-2">
+                    <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1 ml-1">Subject Name</label>
+                    <input type="text" id="class-subject" required placeholder="e.g. Advanced Calculus" class="w-full bg-slate-800/50 p-3 rounded-xl text-white text-sm outline-none ring-1 ring-white/10 focus:ring-emerald-500">
+                </div>
+                
+                <div>
+                    <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1 ml-1">Section</label>
+                    <select id="class-program" required class="w-full bg-slate-800/50 p-3 rounded-xl text-white text-sm outline-none ring-1 ring-white/10 focus:ring-emerald-500"></select>
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1 ml-1">Room</label>
+                    <select id="class-room" required class="w-full bg-slate-800/50 p-3 rounded-xl text-white text-sm outline-none ring-1 ring-white/10 focus:ring-emerald-500"></select>
+                </div>
+
+                <div class="sm:col-span-2">
+                    <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1 ml-1">Date</label>
+                    <input type="date" id="class-date" required class="w-full bg-slate-800/50 p-3 rounded-xl text-white text-sm outline-none ring-1 ring-white/10 focus:ring-emerald-500">
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1 ml-1">Start Time</label>
+                    <input type="time" id="class-start" required class="w-full bg-slate-800/50 p-3 rounded-xl text-white text-sm outline-none ring-1 ring-white/10 focus:ring-emerald-500">
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1 ml-1">End Time</label>
+                    <input type="time" id="class-end" required class="w-full bg-slate-800/50 p-3 rounded-xl text-white text-sm outline-none ring-1 ring-white/10 focus:ring-emerald-500">
+                </div>
+
+                <div class="sm:col-span-2 pt-4">
+                    <button type="submit" class="w-full py-4 bg-emerald-600 rounded-xl font-bold text-sm hover:bg-emerald-500 transition shadow-lg flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-calendar-plus"></i>
+                        Confirm Schedule
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: AI DRAWER -->
     <div id="modal-ai" class="fixed inset-0 bg-slate-950/40 hidden justify-end z-[120]">
-        <div class="w-full max-w-md glass flex flex-col h-full lg:h-auto lg:m-4 lg:rounded-[32px] shadow-2xl overflow-hidden">
-            <div class="p-6 border-b border-white/5 flex items-center justify-between shrink-0 bg-slate-900/50">
+        <div class="w-full max-w-md glass flex flex-col h-full lg:h-auto shadow-2xl">
+            <div class="p-6 border-b border-white/5 flex items-center justify-between shrink-0">
                 <div class="flex items-center gap-3">
                     <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-xl flex items-center justify-center text-white text-lg shadow-lg">
                         <i class="fa-solid fa-robot"></i>
                     </div>
                     <div>
-                        <h3 class="font-bold text-white text-sm">BCSTEC Assistant</h3>
-                        <p class="text-[9px] text-indigo-400 font-black uppercase tracking-widest">Gemini Engine</p>
+                        <h3 class="font-bold text-white text-sm">STEC Smart Assistant</h3>
+                        <p class="text-[10px] text-indigo-400 font-bold uppercase tracking-widest">Gemini 2.5 Powered</p>
                     </div>
                 </div>
                 <button type="button" class="close-modal text-slate-500 p-2 hover:text-white transition"><i class="fa-solid fa-chevron-right text-lg"></i></button>
             </div>
-            <div id="chat-box" class="flex-grow overflow-y-auto p-4 lg:p-6 flex flex-col gap-4 bg-slate-950/20 scroll-container">
-                <div class="chat-bubble-bot p-4 rounded-2xl text-xs lg:text-sm self-start max-w-[85%] text-slate-300">
-                    Hello! I am the official AI assistant for Bayawan City Science and Technology Education Center (BCSTEC). How can I help you navigate our campus today?
+            <div id="chat-box" class="flex-grow overflow-y-auto p-6 flex flex-col gap-4 bg-slate-950/20 scroll-container">
+                <div class="chat-bubble-bot p-4 rounded-2xl text-sm self-start max-w-[85%] text-slate-300">
+                    Hello! I am your STEC Smart Assistant. How can I help you navigate the campus or check schedules today?
                 </div>
             </div>
-            <div id="ai-loading" class="px-6 py-2 hidden shrink-0">
+            <div id="ai-loading" class="px-6 py-2 hidden">
                 <div class="typing-dots space-x-1"><span></span><span></span><span></span></div>
             </div>
-            <form id="form-ai" class="p-4 bg-slate-900 border-t border-white/5 flex gap-2 shrink-0 pb-safe" onsubmit="handleAIChat(event)">
-                <input type="text" id="ai-input" placeholder="Ask about BCSTEC..." class="flex-grow bg-slate-800 rounded-xl px-4 py-3 text-sm text-white outline-none focus:ring-2 ring-indigo-500 transition-all">
+            <form id="form-ai" class="p-4 bg-slate-900 border-t border-white/5 flex gap-2 shrink-0" onsubmit="handleAIChat(event)">
+                <input type="text" id="ai-input" placeholder="Type your question..." class="flex-grow bg-slate-800 rounded-xl px-4 py-3 text-sm text-white outline-none focus:ring-2 ring-indigo-500 transition-all">
                 <button type="submit" id="ai-send-btn" class="w-12 h-12 bg-indigo-600 hover:bg-indigo-500 transition rounded-xl flex items-center justify-center text-white shadow-lg">
                     <i class="fa-solid fa-paper-plane"></i>
                 </button>
@@ -264,47 +300,8 @@
         </div>
     </div>
 
-    <div id="modal-class" class="fixed inset-0 bg-slate-950/95 backdrop-blur-xl hidden items-center justify-center z-[130] p-4">
-        <div class="w-full max-w-lg glass p-6 lg:p-8 rounded-[32px] relative scroll-container max-h-[90vh]">
-            <button type="button" class="close-modal absolute top-6 right-6 text-slate-500 hover:text-white transition"><i class="fa-solid fa-xmark text-xl"></i></button>
-            <div class="mb-6">
-                <h3 class="text-xl font-bold text-white">Create Schedule</h3>
-                <p class="text-slate-500 text-[10px] font-bold uppercase tracking-widest mt-1">Calendar Management</p>
-            </div>
-            <form id="form-class" class="grid grid-cols-1 sm:grid-cols-2 gap-4" onsubmit="handleClassSubmit(event)">
-                <div class="sm:col-span-2">
-                    <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1 ml-1">Course Title</label>
-                    <input type="text" id="class-subject" required class="w-full bg-slate-800/50 p-3 rounded-xl text-white text-sm outline-none ring-1 ring-white/10 focus:ring-emerald-500">
-                </div>
-                <div>
-                    <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1 ml-1">Section</label>
-                    <select id="class-program" required class="w-full bg-slate-800/50 p-3 rounded-xl text-white text-sm outline-none ring-1 ring-white/10 focus:ring-emerald-500"></select>
-                </div>
-                <div>
-                    <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1 ml-1">Room</label>
-                    <select id="class-room" required class="w-full bg-slate-800/50 p-3 rounded-xl text-white text-sm outline-none ring-1 ring-white/10 focus:ring-emerald-500"></select>
-                </div>
-                <div class="sm:col-span-2">
-                    <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1 ml-1">Date</label>
-                    <input type="date" id="class-date" required class="w-full bg-slate-800/50 p-3 rounded-xl text-white text-sm outline-none ring-1 ring-white/10 focus:ring-emerald-500">
-                </div>
-                <div>
-                    <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1 ml-1">Start</label>
-                    <input type="time" id="class-start" required class="w-full bg-slate-800/50 p-3 rounded-xl text-white text-sm outline-none ring-1 ring-white/10 focus:ring-emerald-500">
-                </div>
-                <div>
-                    <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1 ml-1">End</label>
-                    <input type="time" id="class-end" required class="w-full bg-slate-800/50 p-3 rounded-xl text-white text-sm outline-none ring-1 ring-white/10 focus:ring-emerald-500">
-                </div>
-                <div class="sm:col-span-2 mt-2">
-                    <button type="submit" class="w-full py-4 bg-emerald-600 rounded-xl font-bold text-sm hover:bg-emerald-500 transition shadow-lg text-white">Save Schedule Entry</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
     <script>
-        const apiKey = "AIzaSyDVWjA31ScGRW7mWIDbO9TsLC_9vtL9uFs";
+        const apiKey = "AIzaSyDVWjA31ScGRW7mWIDbO9TsLC_9vtL9uFs"; // Provided by environment
         const CONFIG = {
             SUPABASE_URL: "https://nwwkgmlnnlsmbjrvcnaj.supabase.co",
             SUPABASE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im53d2tnbWxubmxzbWJqcnZjbmFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3OTYxMDcsImV4cCI6MjA4MTM3MjEwN30.Stz0PC0XAxlAkmHpWxY9reIeVzbXaDKuiSUOrJ4HB7Y", 
@@ -324,10 +321,12 @@
             chatHistory: []
         };
 
-        // UI Tabs
+        // --- CORE UI FUNCTIONS ---
         function switchTab(id, event) {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
-            document.getElementById(`tab-${id}`).classList.remove('hidden');
+            const target = document.getElementById(`tab-${id}`);
+            if(target) target.classList.remove('hidden');
+            
             document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
             
             if(event) {
@@ -338,9 +337,9 @@
             }
 
             const meta = {
-                map: { title: 'BCSTEC Navigator' },
+                map: { title: 'Campus Navigator' },
                 calendar: { title: 'Class Schedules' },
-                directory: { title: 'BCSTEC Faculty' }
+                directory: { title: 'Faculty Directory' }
             };
             document.getElementById('view-title').textContent = meta[id].title;
 
@@ -348,27 +347,12 @@
             if(id === 'directory') loadDirectory();
         }
 
-        function openClassModal() {
-            document.getElementById('modal-class').classList.replace('hidden', 'flex');
-            loadFormOptions();
-        }
-
-        async function loadFormOptions() {
-            const { data: progs } = await supabase.from('programs').select('*').order('grade_level');
-            const { data: rms } = await supabase.from('rooms').select('*').order('name');
-            
-            document.getElementById('class-program').innerHTML = progs.map(p => `<option value="${p.id}">${p.grade_level}-${p.section}</option>`).join('');
-            document.getElementById('class-room').innerHTML = rms.map(r => `<option value="${r.id}">${r.name}</option>`).join('');
-        }
-
-        // Calendar Engine
         function renderCalendar() {
             const el = document.getElementById('calendar');
             const isMobile = window.innerWidth < 1024;
 
             if(state.calendar) {
                 state.calendar.changeView(isMobile ? 'listDay' : 'timeGridDay');
-                state.calendar.updateSize();
                 state.calendar.refetchEvents();
                 return;
             }
@@ -381,10 +365,7 @@
                     right: isMobile ? '' : 'timeGridDay,timeGridWeek' 
                 },
                 slotMinTime: '07:00:00', slotMaxTime: '18:00:00',
-                allDaySlot: false, 
-                height: '100%',
-                handleWindowResize: true,
-                expandRows: true,
+                allDaySlot: false, height: 'parent',
                 events: async (info, success, failure) => {
                     let query = supabase.from('classes').select(`
                         id, subject, start_time, end_time,
@@ -404,7 +385,7 @@
                     if(error) return failure(error);
 
                     success(data.map(c => ({
-                        title: `${c.subject} - ${c.profiles?.full_name || 'TBA'}`,
+                        title: `${c.subject} (${c.profiles?.full_name || 'TBA'})`,
                         start: c.start_time,
                         end: c.end_time,
                         extendedProps: { room: c.rooms?.name }
@@ -428,6 +409,7 @@
             state.level = level;
             state.program = 'all';
             
+            // Highlight buttons in both desktop and mobile UI
             document.querySelectorAll('.level-btn').forEach(btn => {
                 if (btn.getAttribute('data-level') === level) {
                     btn.classList.add('active');
@@ -443,66 +425,137 @@
         async function loadDirectory() {
             const { data } = await supabase.from('profiles').select('*').in('role', ['admin', 'teacher']).order('full_name');
             document.getElementById('directory-grid').innerHTML = (data || []).map(p => `
-                <div class="glass-card p-4 rounded-2xl flex items-center gap-4 border border-transparent hover:border-pink-500/20 transition-all">
-                    <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-pink-500/20 to-violet-500/20 flex items-center justify-center text-pink-500 font-bold shadow-inner">
+                <div class="glass-card p-4 rounded-2xl flex items-center gap-4 hover:border-pink-500/30 transition-colors">
+                    <div class="w-12 h-12 rounded-xl bg-pink-500/10 flex items-center justify-center text-pink-500 font-bold">
                         ${p.full_name[0]}
                     </div>
                     <div class="flex-grow">
                         <h4 class="font-bold text-white text-sm">${p.full_name}</h4>
-                        <p class="text-[9px] text-slate-500 font-black uppercase tracking-widest">${p.role}</p>
+                        <p class="text-[10px] text-slate-500 font-black uppercase tracking-widest">${p.role}</p>
                     </div>
                 </div>
             `).join('');
         }
 
-        // Auth Logic
+        // --- AUTH ---
         async function handleLogin(e) {
             e.preventDefault();
             const name = document.getElementById('login-name').value;
             const pass = document.getElementById('login-pass').value;
             
-            const { data } = await supabase.from('profiles').select('*').eq('full_name', name).eq('passkey', pass).single();
+            const { data, error } = await supabase.from('profiles').select('*').eq('full_name', name).eq('passkey', pass).single();
             
             if (data && (data.role === 'admin' || data.role === 'teacher')) {
                 state.user = data;
                 state.isAdmin = true;
-                
-                // Show admin UI
                 document.getElementById('modal-login').classList.replace('flex', 'hidden');
-                document.getElementById('login-trigger').innerHTML = `<i class="fa-solid fa-circle-check lg:mr-2"></i><span class="hidden lg:inline">Admin Mode</span>`;
-                
-                // Show for desktop
+                document.getElementById('login-trigger').innerHTML = `<i class="fa-solid fa-circle-check lg:mr-2"></i><span class="hidden lg:inline">Verified</span>`;
                 document.getElementById('admin-controls').classList.remove('hidden');
-                // Show for mobile bottom bar
-                document.getElementById('mobile-admin-btn').classList.remove('hidden');
             } else {
-                const btn = e.target.querySelector('button');
-                btn.textContent = "Access Denied";
-                btn.classList.replace('bg-pink-600', 'bg-red-600');
+                const originalBtn = e.target.querySelector('button');
+                originalBtn.textContent = "Invalid Passkey";
+                originalBtn.classList.replace('bg-pink-600', 'bg-red-600');
                 setTimeout(() => {
-                    btn.textContent = "Unlock Admin Tools";
-                    btn.classList.replace('bg-red-600', 'bg-pink-600');
+                    originalBtn.textContent = "Verify Identity";
+                    originalBtn.classList.replace('bg-red-600', 'bg-pink-600');
                 }, 2000);
             }
         }
 
+        // --- CLASS MANAGEMENT ---
+        async function openClassModal() {
+            const [progRes, roomRes] = await Promise.all([
+                supabase.from('programs').select('*').order('grade_level'),
+                supabase.from('rooms').select('*').order('name')
+            ]);
+            
+            state.allPrograms = progRes.data || [];
+            state.rooms = roomRes.data || [];
+
+            document.getElementById('class-program').innerHTML = state.allPrograms.map(p => `<option value="${p.id}">${p.name} - Gr. ${p.grade_level} ${p.section}</option>`).join('');
+            document.getElementById('class-room').innerHTML = state.rooms.map(r => `<option value="${r.id}">${r.name} (${r.building})</option>`).join('');
+
+            document.getElementById('modal-class').classList.replace('hidden', 'flex');
+        }
+
         async function handleClassSubmit(e) {
             e.preventDefault();
-            if(!state.user) return;
+            const btn = e.target.querySelector('button');
+            const originalHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-circle-notch animate-spin"></i> Saving...`;
+
+            const dateStr = document.getElementById('class-date').value;
+            const startStr = document.getElementById('class-start').value;
+            const endStr = document.getElementById('class-end').value;
+
+            const start = new Date(`${dateStr}T${startStr}`);
+            const end = new Date(`${dateStr}T${endStr}`);
 
             const payload = {
                 subject: document.getElementById('class-subject').value,
                 program_id: document.getElementById('class-program').value,
                 room_id: document.getElementById('class-room').value,
-                start_time: `${document.getElementById('class-date').value}T${document.getElementById('class-start').value}:00`,
-                end_time: `${document.getElementById('class-date').value}T${document.getElementById('class-end').value}:00`,
-                teacher_id: state.user.id
+                teacher_id: state.user.id,
+                start_time: start.toISOString(),
+                end_time: end.toISOString(),
+                day_of_week: start.getDay()
             };
 
             const { error } = await supabase.from('classes').insert([payload]);
-            if(!error) {
-                document.getElementById('modal-class').classList.replace('flex', 'hidden');
-                if(state.calendar) state.calendar.refetchEvents();
+
+            if (error) {
+                console.error(error);
+                btn.classList.replace('bg-emerald-600', 'bg-red-600');
+                btn.textContent = "Error Saving";
+            } else {
+                btn.classList.replace('bg-emerald-600', 'bg-blue-600');
+                btn.textContent = "Success!";
+                setTimeout(() => {
+                    document.getElementById('modal-class').classList.replace('flex', 'hidden');
+                    if(state.calendar) state.calendar.refetchEvents();
+                    e.target.reset();
+                }, 1000);
+            }
+
+            setTimeout(() => {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+                btn.classList.remove('bg-red-600', 'bg-blue-600');
+                btn.classList.add('bg-emerald-600');
+            }, 1500);
+        }
+
+        // --- AI ASSISTANT ---
+        async function callGemini(userQuery) {
+            const systemPrompt = `You are the STEC Smart Assistant. You help students and staff at Science and Technology Education Center (STEC). 
+            Context: Levels: JHS/SHS. Sections: Silver, Gold, Pasteur, etc. Concise help only.`;
+
+            let retries = 0;
+            const delays = [1000, 2000, 4000, 8000, 16000];
+
+            const fetchResponse = async () => {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.MODEL}:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: userQuery }] }],
+                        systemInstruction: { parts: [{ text: systemPrompt }] }
+                    })
+                });
+                if (!response.ok) throw new Error('API Error');
+                return response.json();
+            };
+
+            while (retries < 5) {
+                try {
+                    const result = await fetchResponse();
+                    return result.candidates?.[0]?.content?.parts?.[0]?.text || "I'm sorry, I couldn't process that.";
+                } catch (err) {
+                    if (retries === 4) return "Connection error.";
+                    await new Promise(r => setTimeout(r, delays[retries]));
+                    retries++;
+                }
             }
         }
 
@@ -514,35 +567,25 @@
 
             const chatBox = document.getElementById('chat-box');
             const loading = document.getElementById('ai-loading');
-            
-            chatBox.innerHTML += `<div class="chat-bubble-user p-4 rounded-2xl text-xs lg:text-sm self-end max-w-[85%] text-white shadow-md font-medium">${message}</div>`;
+            const sendBtn = document.getElementById('ai-send-btn');
+
+            chatBox.innerHTML += `<div class="chat-bubble-user p-4 rounded-2xl text-sm self-end max-w-[85%] text-white shadow-md">${message}</div>`;
             input.value = '';
             chatBox.scrollTop = chatBox.scrollHeight;
 
             loading.classList.remove('hidden');
+            sendBtn.disabled = true;
 
-            try {
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.MODEL}:generateContent?key=${apiKey}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{ parts: [{ text: message }] }],
-                        systemInstruction: { parts: [{ text: "You are the BCSTEC Smart Assistant for Bayawan City Science and Technology Education Center. You help students and guests find schedules, rooms, and faculty. Keep responses brief, professional, and specific to BCSTEC. Do not refer to any other school." }] }
-                    })
-                });
-                const result = await response.json();
-                const reply = result.candidates?.[0]?.content?.parts?.[0]?.text || "System busy. Try again.";
-                
-                loading.classList.add('hidden');
-                chatBox.innerHTML += `<div class="chat-bubble-bot p-4 rounded-2xl text-xs lg:text-sm self-start max-w-[85%] text-slate-300 shadow-md border border-white/5">${reply}</div>`;
-                chatBox.scrollTop = chatBox.scrollHeight;
-            } catch (err) {
-                loading.classList.add('hidden');
-                chatBox.innerHTML += `<div class="chat-bubble-bot p-4 rounded-2xl text-xs lg:text-sm self-start max-w-[85%] text-red-400">Connection error.</div>`;
-            }
+            const responseText = await callGemini(message);
+
+            loading.classList.add('hidden');
+            sendBtn.disabled = false;
+
+            chatBox.innerHTML += `<div class="chat-bubble-bot p-4 rounded-2xl text-sm self-start max-w-[85%] text-slate-300 shadow-md border border-white/5">${responseText}</div>`;
+            chatBox.scrollTop = chatBox.scrollHeight;
         }
 
-        // Global Handlers
+        // --- INITIALIZATION ---
         document.getElementById('login-trigger').onclick = () => document.getElementById('modal-login').classList.replace('hidden', 'flex');
         document.getElementById('mobile-ai-trigger').onclick = () => document.getElementById('modal-ai').classList.replace('hidden', 'flex');
         document.getElementById('ai-btn').onclick = () => document.getElementById('modal-ai').classList.replace('hidden', 'flex');
@@ -558,16 +601,21 @@
             const { data } = await supabase.from('programs').select('*').order('grade_level');
             state.allPrograms = data || [];
             updateProgramSelect();
-            setSchoolLevel('Junior High');
+            setSchoolLevel('Junior High'); // Initialize highlight
             switchTab('map');
         };
 
-        window.onresize = () => { if(state.calendar) state.calendar.updateSize(); };
-        
+        window.onresize = () => {
+            if(state.calendar) renderCalendar();
+        };
+
         document.addEventListener('change', (e) => {
             if(e.target.id === 'program-select' || e.target.id === 'mobile-program-select') {
                 state.program = e.target.value;
                 if(state.calendar) state.calendar.refetchEvents();
+                document.getElementById('program-select').value = state.program;
+                const mSelect = document.getElementById('mobile-program-select');
+                if(mSelect) mSelect.value = state.program;
             }
         });
     </script>
