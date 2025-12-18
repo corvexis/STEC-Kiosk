@@ -8,7 +8,7 @@
     <link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/main.min.css' rel='stylesheet' />
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js'></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/max/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&family=Outfit:wght@300;400;600;800&display=swap');
         
@@ -112,7 +112,6 @@
                 <span class="text-[9px] lg:text-sm font-bold lg:font-medium">Staff</span>
             </button>
             
-            <!-- Mobile Admin Action (Visible when logged in) -->
             <button type="button" id="admin-manage-btn-mobile" onclick="openClassModal()" class="hidden flex-1 p-3 rounded-xl flex flex-col items-center gap-1 text-emerald-400">
                 <i class="fa-solid fa-calendar-plus text-lg"></i>
                 <span class="text-[9px] font-bold">Manage</span>
@@ -200,11 +199,19 @@
 
             <!-- CALENDAR TAB -->
             <div id="tab-calendar" class="tab-content absolute inset-0 hidden p-2 lg:p-6 flex flex-col">
-                <div class="mb-4 lg:mb-6 flex flex-wrap gap-2 lg:gap-4 px-2 items-center">
-                    <label class="text-[10px] font-bold uppercase text-slate-500 tracking-widest">Filter by Section:</label>
-                    <select id="filter-section" class="bg-slate-900 border border-white/10 rounded-xl px-4 py-2 text-xs font-bold text-white outline-none focus:ring-2 ring-pink-500 min-w-[150px]">
-                        <option value="">All Sections</option>
-                    </select>
+                <div class="mb-4 lg:mb-6 flex flex-wrap gap-4 px-2 items-center">
+                    <div class="flex items-center gap-2">
+                        <label class="text-[10px] font-bold uppercase text-slate-500 tracking-widest whitespace-nowrap">Grade:</label>
+                        <select id="filter-grade" onchange="updateSectionFilter()" class="bg-slate-900 border border-white/10 rounded-xl px-4 py-2 text-xs font-bold text-white outline-none focus:ring-2 ring-pink-500 min-w-[100px]">
+                            <option value="">All Grades</option>
+                        </select>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label class="text-[10px] font-bold uppercase text-slate-500 tracking-widest whitespace-nowrap">Section:</label>
+                        <select id="filter-section" class="bg-slate-900 border border-white/10 rounded-xl px-4 py-2 text-xs font-bold text-white outline-none focus:ring-2 ring-pink-500 min-w-[150px]">
+                            <option value="">All Sections</option>
+                        </select>
+                    </div>
                 </div>
                 <div class="flex-grow glass-card rounded-2xl p-1 lg:p-4 overflow-hidden relative">
                     <div id="calendar" class="h-full w-full"></div>
@@ -214,7 +221,6 @@
             <!-- DIRECTORY TAB -->
             <div id="tab-directory" class="tab-content absolute inset-0 hidden p-4 lg:p-8 flex flex-col">
                 <div id="directory-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 overflow-y-auto scroll-container pb-24">
-                    <!-- Staff profiles -->
                 </div>
             </div>
         </div>
@@ -416,7 +422,7 @@
         async function loadSharedData() {
             if (state.programs.length > 0) return;
             const [p, t, r] = await Promise.all([
-                supabase.from('programs').select('*').order('section'),
+                supabase.from('programs').select('*').order('grade_level').order('section'),
                 supabase.from('profiles').select('*').eq('role', 'teacher').order('full_name'),
                 supabase.from('rooms').select('*').order('name')
             ]);
@@ -424,15 +430,32 @@
             state.teachers = t.data || [];
             state.rooms = r.data || [];
 
-            // Populate Section Filter
-            const sectionSelect = document.getElementById('filter-section');
-            sectionSelect.innerHTML = '<option value="">All Sections</option>' + 
-                state.programs.map(prog => `<option value="${prog.id}">${prog.section} (G${prog.grade_level})</option>`).join('');
+            // Populate Grade Filter
+            const gradeSelect = document.getElementById('filter-grade');
+            const uniqueGrades = [...new Set(state.programs.map(p => p.grade_level))].sort((a,b) => a-b);
+            gradeSelect.innerHTML = '<option value="">All Grades</option>' + 
+                uniqueGrades.map(g => `<option value="${g}">Grade ${g}</option>`).join('');
+
+            updateSectionFilter(); // Initial pop of sections (will show all)
 
             // Populate Modal Selects
             document.getElementById('class-program').innerHTML = state.programs.map(p => `<option value="${p.id}">${p.section} - G${p.grade_level}</option>`).join('');
             document.getElementById('class-teacher').innerHTML = state.teachers.map(t => `<option value="${t.id}">${t.full_name}</option>`).join('');
             document.getElementById('class-room').innerHTML = state.rooms.map(r => `<option value="${r.id}">${r.name}</option>`).join('');
+        }
+
+        function updateSectionFilter() {
+            const gradeVal = document.getElementById('filter-grade').value;
+            const sectionSelect = document.getElementById('filter-section');
+            
+            const filtered = gradeVal 
+                ? state.programs.filter(p => p.grade_level.toString() === gradeVal)
+                : state.programs;
+
+            sectionSelect.innerHTML = '<option value="">All Sections</option>' + 
+                filtered.map(prog => `<option value="${prog.id}">${prog.section}</option>`).join('');
+            
+            if(state.calendar) state.calendar.refetchEvents();
         }
 
         // --- CALENDAR ---
@@ -447,12 +470,27 @@
                 slotMinTime: '07:00:00', slotMaxTime: '18:00:00',
                 allDaySlot: false, height: '100%', nowIndicator: true,
                 events: async (info, success, failure) => {
+                    const gradeVal = document.getElementById('filter-grade').value;
                     const sectionId = document.getElementById('filter-section').value;
+                    
                     let query = supabase.from('classes').select(`
                         id, subject, start_time, end_time, day_of_week, program_id, teacher_id, room_id,
-                        profiles(full_name), rooms(name), programs(section)
+                        profiles(full_name), rooms(name), programs(section, grade_level)
                     `);
-                    if (sectionId) query = query.eq('program_id', sectionId);
+
+                    // If a specific section is chosen, filter by that
+                    if (sectionId) {
+                        query = query.eq('program_id', sectionId);
+                    } 
+                    // Else if just a grade is chosen, filter by the grade_level in the joined programs table
+                    else if (gradeVal) {
+                        // Note: Filtered via local mapping or complex joins. 
+                        // Simplified approach for the demo: handle multiple IDs if needed or use the denormalized column if available
+                        const sectionIdsForGrade = state.programs
+                            .filter(p => p.grade_level.toString() === gradeVal)
+                            .map(p => p.id);
+                        query = query.in('program_id', sectionIdsForGrade);
+                    }
 
                     const { data, error } = await query;
                     if (error) return failure(error);
@@ -573,4 +611,4 @@
         };
     </script>
 </body>
-</html>
+        </html>
