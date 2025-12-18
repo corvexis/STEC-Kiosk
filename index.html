@@ -73,6 +73,13 @@
         .typing-dots span:nth-child(1) { animation-delay: -0.32s; }
         .typing-dots span:nth-child(2) { animation-delay: -0.16s; }
         @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1.0); } }
+        
+        /* Level Toggle Highlighting */
+        .level-btn.active { 
+            background-color: var(--brand-primary) !important; 
+            color: white !important;
+            box-shadow: 0 4px 12px rgba(236, 72, 153, 0.3);
+        }
     </style>
 </head>
 <body class="flex flex-col lg:flex-row overflow-hidden">
@@ -112,8 +119,8 @@
             <div class="glass-card p-4 rounded-2xl mb-4">
                 <p class="text-[10px] font-black text-pink-500 uppercase mb-3 tracking-widest">Global Filter</p>
                 <div class="flex p-1 bg-slate-900/50 rounded-lg mb-3">
-                    <button type="button" onclick="setSchoolLevel('Junior High')" class="level-btn active flex-1 py-1 text-[10px] font-bold rounded-md" id="btn-jhs">JHS</button>
-                    <button type="button" onclick="setSchoolLevel('Senior High')" class="level-btn flex-1 py-1 text-[10px] font-bold rounded-md" id="btn-shs">SHS</button>
+                    <button type="button" onclick="setSchoolLevel('Junior High')" class="level-btn active flex-1 py-1 text-[10px] font-bold rounded-md transition-all duration-200" data-level="Junior High">JHS</button>
+                    <button type="button" onclick="setSchoolLevel('Senior High')" class="level-btn flex-1 py-1 text-[10px] font-bold rounded-md transition-all duration-200" data-level="Senior High">SHS</button>
                 </div>
                 <select id="program-select" class="w-full bg-slate-800/50 border-none rounded-lg p-2 text-xs text-white outline-none ring-1 ring-white/10 focus:ring-pink-500">
                     <option value="all">All Sections</option>
@@ -170,8 +177,8 @@
             <!-- CALENDAR TAB -->
             <div id="tab-calendar" class="tab-content absolute inset-0 hidden p-2 lg:p-4 flex flex-col">
                 <div class="lg:hidden flex gap-2 mb-2 overflow-x-auto pb-2 shrink-0 no-scrollbar">
-                    <button type="button" onclick="setSchoolLevel('Junior High')" class="level-btn active whitespace-nowrap px-4 py-2 bg-slate-800 rounded-full text-xs font-bold border border-white/5">JHS</button>
-                    <button type="button" onclick="setSchoolLevel('Senior High')" class="level-btn whitespace-nowrap px-4 py-2 bg-slate-800 rounded-full text-xs font-bold border border-white/5">SHS</button>
+                    <button type="button" onclick="setSchoolLevel('Junior High')" class="level-btn active whitespace-nowrap px-4 py-2 bg-slate-800 rounded-full text-xs font-bold border border-white/5" data-level="Junior High">JHS</button>
+                    <button type="button" onclick="setSchoolLevel('Senior High')" class="level-btn whitespace-nowrap px-4 py-2 bg-slate-800 rounded-full text-xs font-bold border border-white/5" data-level="Senior High">SHS</button>
                     <select id="mobile-program-select" class="bg-slate-800 rounded-full px-4 py-2 text-xs font-bold border border-white/5 outline-none"></select>
                 </div>
                 <div class="flex-grow glass-card rounded-2xl lg:rounded-3xl p-2 lg:p-6 relative overflow-hidden scroll-container">
@@ -401,7 +408,16 @@
         function setSchoolLevel(level) {
             state.level = level;
             state.program = 'all';
-            document.querySelectorAll('.level-btn').forEach(b => b.classList.toggle('active', b.textContent === (level === 'Junior High' ? 'JHS' : 'SHS')));
+            
+            // Highlight buttons in both desktop and mobile UI
+            document.querySelectorAll('.level-btn').forEach(btn => {
+                if (btn.getAttribute('data-level') === level) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+
             updateProgramSelect();
             if(state.calendar) state.calendar.refetchEvents();
         }
@@ -448,7 +464,6 @@
 
         // --- CLASS MANAGEMENT ---
         async function openClassModal() {
-            // Load programs and rooms if not already loaded or for freshness
             const [progRes, roomRes] = await Promise.all([
                 supabase.from('programs').select('*').order('grade_level'),
                 supabase.from('rooms').select('*').order('name')
@@ -586,6 +601,7 @@
             const { data } = await supabase.from('programs').select('*').order('grade_level');
             state.allPrograms = data || [];
             updateProgramSelect();
+            setSchoolLevel('Junior High'); // Initialize highlight
             switchTab('map');
         };
 
