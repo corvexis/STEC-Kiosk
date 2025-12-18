@@ -8,7 +8,8 @@
     <link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/main.min.css' rel='stylesheet' />
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js'></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/max/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Fixed Font Awesome URL -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&family=Outfit:wght@300;400;600;800&display=swap');
         
@@ -56,6 +57,16 @@
             background-color: var(--brand-primary) !important; 
             color: white !important;
             box-shadow: 0 0 20px rgba(236, 72, 153, 0.4);
+        }
+
+        .dept-btn {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .dept-btn.active {
+            background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%) !important;
+            color: white !important;
+            border-color: transparent !important;
+            box-shadow: 0 10px 15px -3px rgba(236, 72, 153, 0.3);
         }
 
         .profile-image-container {
@@ -199,16 +210,29 @@
 
             <!-- CALENDAR TAB -->
             <div id="tab-calendar" class="tab-content absolute inset-0 hidden p-2 lg:p-6 flex flex-col">
-                <div class="mb-4 lg:mb-6 flex flex-wrap gap-4 px-2 items-center">
+                <div class="mb-4 lg:mb-6 flex flex-wrap lg:flex-nowrap gap-4 px-2 items-center">
+                    <!-- Department Buttons -->
+                    <div class="flex gap-2 p-1.5 bg-slate-900/50 rounded-2xl border border-white/5 shadow-inner">
+                        <button onclick="setDepartment('JHS')" id="dept-jhs" class="dept-btn active px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-2 bg-slate-800/50 text-slate-400 border border-white/5">
+                            <i class="fa-solid fa-school-flag"></i> Junior High
+                        </button>
+                        <button onclick="setDepartment('SHS')" id="dept-shs" class="dept-btn px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-2 bg-slate-800/50 text-slate-400 border border-white/5">
+                            <i class="fa-solid fa-graduation-cap"></i> Senior High
+                        </button>
+                    </div>
+
+                    <div class="h-8 w-px bg-white/5 mx-2 hidden lg:block"></div>
+
+                    <!-- Existing Filters -->
                     <div class="flex items-center gap-2">
                         <label class="text-[10px] font-bold uppercase text-slate-500 tracking-widest whitespace-nowrap">Grade:</label>
-                        <select id="filter-grade" onchange="updateSectionFilter()" class="bg-slate-900 border border-white/10 rounded-xl px-4 py-2 text-xs font-bold text-white outline-none focus:ring-2 ring-pink-500 min-w-[100px]">
+                        <select id="filter-grade" onchange="updateSectionFilter()" class="bg-slate-900 border border-white/10 rounded-xl px-4 py-2.5 text-xs font-bold text-white outline-none focus:ring-2 ring-pink-500 min-w-[100px]">
                             <option value="">All Grades</option>
                         </select>
                     </div>
                     <div class="flex items-center gap-2">
                         <label class="text-[10px] font-bold uppercase text-slate-500 tracking-widest whitespace-nowrap">Section:</label>
-                        <select id="filter-section" class="bg-slate-900 border border-white/10 rounded-xl px-4 py-2 text-xs font-bold text-white outline-none focus:ring-2 ring-pink-500 min-w-[150px]">
+                        <select id="filter-section" onchange="state.calendar.refetchEvents()" class="bg-slate-900 border border-white/10 rounded-xl px-4 py-2.5 text-xs font-bold text-white outline-none focus:ring-2 ring-pink-500 min-w-[150px]">
                             <option value="">All Sections</option>
                         </select>
                     </div>
@@ -357,7 +381,8 @@
             isProcessingAI: false,
             programs: [],
             teachers: [],
-            rooms: []
+            rooms: [],
+            currentDept: 'JHS' // JHS or SHS
         };
 
         // --- CORE UI ---
@@ -383,6 +408,18 @@
 
             if(id === 'calendar') renderCalendar();
             if(id === 'directory') loadDirectory();
+        }
+
+        function setDepartment(dept) {
+            state.currentDept = dept;
+            document.querySelectorAll('.dept-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(`dept-${dept.toLowerCase()}`).classList.add('active');
+            
+            // Re-populate the grade filter based on new department
+            populateGradeFilter();
+            
+            // Force refresh calendar
+            if(state.calendar) state.calendar.refetchEvents();
         }
 
         // --- AUTH ---
@@ -430,13 +467,7 @@
             state.teachers = t.data || [];
             state.rooms = r.data || [];
 
-            // Populate Grade Filter
-            const gradeSelect = document.getElementById('filter-grade');
-            const uniqueGrades = [...new Set(state.programs.map(p => p.grade_level))].sort((a,b) => a-b);
-            gradeSelect.innerHTML = '<option value="">All Grades</option>' + 
-                uniqueGrades.map(g => `<option value="${g}">Grade ${g}</option>`).join('');
-
-            updateSectionFilter(); // Initial pop of sections (will show all)
+            populateGradeFilter();
 
             // Populate Modal Selects
             document.getElementById('class-program').innerHTML = state.programs.map(p => `<option value="${p.id}">${p.section} - G${p.grade_level}</option>`).join('');
@@ -444,13 +475,38 @@
             document.getElementById('class-room').innerHTML = state.rooms.map(r => `<option value="${r.id}">${r.name}</option>`).join('');
         }
 
+        function populateGradeFilter() {
+            const gradeSelect = document.getElementById('filter-grade');
+            
+            // JHS: 7-10, SHS: 11-12
+            const jhsGrades = [7, 8, 9, 10];
+            const shsGrades = [11, 12];
+            const targetGrades = state.currentDept === 'JHS' ? jhsGrades : shsGrades;
+            
+            const uniqueGrades = [...new Set(state.programs
+                .filter(p => targetGrades.includes(p.grade_level))
+                .map(p => p.grade_level))].sort((a,b) => a-b);
+
+            gradeSelect.innerHTML = '<option value="">All Grades</option>' + 
+                uniqueGrades.map(g => `<option value="${g}">Grade ${g}</option>`).join('');
+
+            updateSectionFilter();
+        }
+
         function updateSectionFilter() {
             const gradeVal = document.getElementById('filter-grade').value;
             const sectionSelect = document.getElementById('filter-section');
             
-            const filtered = gradeVal 
-                ? state.programs.filter(p => p.grade_level.toString() === gradeVal)
-                : state.programs;
+            let filtered = state.programs;
+            
+            // Filter by department range first
+            const range = state.currentDept === 'JHS' ? [7,8,9,10] : [11,12];
+            filtered = filtered.filter(p => range.includes(p.grade_level));
+
+            // Then filter by grade if selected
+            if(gradeVal) {
+                filtered = filtered.filter(p => p.grade_level.toString() === gradeVal);
+            }
 
             sectionSelect.innerHTML = '<option value="">All Sections</option>' + 
                 filtered.map(prog => `<option value="${prog.id}">${prog.section}</option>`).join('');
@@ -478,18 +534,24 @@
                         profiles(full_name), rooms(name), programs(section, grade_level)
                     `);
 
-                    // If a specific section is chosen, filter by that
                     if (sectionId) {
                         query = query.eq('program_id', sectionId);
                     } 
-                    // Else if just a grade is chosen, filter by the grade_level in the joined programs table
-                    else if (gradeVal) {
-                        // Note: Filtered via local mapping or complex joins. 
-                        // Simplified approach for the demo: handle multiple IDs if needed or use the denormalized column if available
-                        const sectionIdsForGrade = state.programs
-                            .filter(p => p.grade_level.toString() === gradeVal)
-                            .map(p => p.id);
-                        query = query.in('program_id', sectionIdsForGrade);
+                    else {
+                        // Apply department filter
+                        const range = state.currentDept === 'JHS' ? [7,8,9,10] : [11,12];
+                        let targetSectionIds;
+                        
+                        if (gradeVal) {
+                             targetSectionIds = state.programs
+                                .filter(p => p.grade_level.toString() === gradeVal)
+                                .map(p => p.id);
+                        } else {
+                             targetSectionIds = state.programs
+                                .filter(p => range.includes(p.grade_level))
+                                .map(p => p.id);
+                        }
+                        query = query.in('program_id', targetSectionIds);
                     }
 
                     const { data, error } = await query;
@@ -511,7 +573,6 @@
                 eventClick: (info) => { if (state.user) openClassModal(info.event.extendedProps); }
             });
             state.calendar.render();
-            document.getElementById('filter-section').onchange = () => state.calendar.refetchEvents();
         }
 
         // --- DIRECTORY ---
@@ -611,4 +672,4 @@
         };
     </script>
 </body>
-        </html>
+</html>
