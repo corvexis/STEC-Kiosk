@@ -14,14 +14,17 @@
         .glass-panel { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
         .sidebar-item:hover { background: rgba(236, 72, 153, 0.1); color: #ec4899; }
         .active-tab { border-left: 4px solid #ec4899; background: rgba(236, 72, 153, 0.1); color: #ec4899; }
-        .fc-toolbar-title { font-size: 1.1rem !important; font-weight: 800; color: #ec4899 !important; }
-        .fc { --fc-border-color: rgba(255,255,255,0.1); --fc-page-bg-color: transparent; }
-        .fc-timegrid-slot { height: 3em !important; border-bottom: 1px solid rgba(255,255,255,0.05) !important; }
+        
+        /* FullCalendar Custom Theming */
+        .fc-toolbar-title { font-size: 1.25rem !important; font-weight: 800; color: #f8fafc !important; }
+        .fc { --fc-border-color: rgba(255,255,255,0.05); --fc-page-bg-color: transparent; border: none !important; }
+        .fc-theme-standard td, .fc-theme-standard th { border: 1px solid rgba(255,255,255,0.05) !important; }
+        .fc-timegrid-slot { height: 4em !important; }
+        .fc-col-header-cell { padding: 12px 0 !important; background: rgba(15, 23, 42, 0.5); }
+        .fc-event { border: none !important; border-radius: 8px !important; padding: 4px !important; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
-        .message-bubble { max-width: 85%; padding: 12px 16px; border-radius: 20px; font-size: 0.875rem; }
-        .message-bot { background: #1e293b; color: #f8fafc; border-bottom-left-radius: 4px; }
-        .message-user { background: #ec4899; color: white; border-bottom-right-radius: 4px; align-self: flex-end; }
     </style>
 </head>
 <body class="flex flex-col">
@@ -64,29 +67,30 @@
         </aside>
 
         <!-- MAIN AREA -->
-        <main class="flex-grow relative bg-slate-950">
+        <main class="flex-grow relative bg-slate-950 overflow-hidden">
+            <!-- Map Tab -->
             <div id="tab-map" class="tab-content absolute inset-0 p-6 flex flex-col gap-6">
                 <h2 class="text-2xl font-extrabold text-white">Campus Navigator</h2>
                 <div class="flex-grow glass-panel rounded-3xl flex items-center justify-center text-slate-500">Interactive Map View</div>
             </div>
 
-            <div id="tab-calendar" class="tab-content absolute inset-0 p-6 hidden flex-col gap-6">
-                <div class="flex justify-between items-center">
+            <!-- Calendar Tab (No Box Container) -->
+            <div id="tab-calendar" class="tab-content absolute inset-0 hidden flex flex-col">
+                <div class="px-6 pt-6 flex justify-between items-center bg-slate-950">
                     <h2 class="text-2xl font-extrabold text-white">Class Schedules</h2>
                     <div id="admin-actions" class="hidden">
                         <button id="add-class-btn" class="px-4 py-2 bg-pink-600 hover:bg-pink-700 rounded-xl font-bold transition">Add Schedule</button>
                     </div>
                 </div>
-                <div class="flex-grow glass-panel rounded-3xl p-4 overflow-hidden">
+                <div class="flex-grow px-2 pb-2 mt-4 overflow-hidden">
                     <div id="calendar" class="h-full w-full"></div>
                 </div>
             </div>
 
+            <!-- Directory Tab -->
             <div id="tab-directory" class="tab-content absolute inset-0 p-6 hidden flex-col gap-6">
                 <h2 class="text-2xl font-extrabold text-white">Directory</h2>
-                <div id="directory-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 overflow-y-auto">
-                    <!-- Directory cards... -->
-                </div>
+                <div id="directory-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 overflow-y-auto"></div>
             </div>
         </main>
     </div>
@@ -100,11 +104,9 @@
             </div>
             <form id="form-new-class" class="p-6 space-y-4">
                 <input type="text" id="class-subject" placeholder="Subject Name" required class="w-full bg-slate-800 border-slate-700 rounded-xl p-3 text-white">
-                <div class="grid grid-cols-1 gap-2">
-                    <select id="select-program" required class="w-full bg-slate-800 border-slate-700 rounded-xl p-3 text-white">
-                        <option value="">Select Program/Section</option>
-                    </select>
-                </div>
+                <select id="select-program" required class="w-full bg-slate-800 border-slate-700 rounded-xl p-3 text-white">
+                    <option value="">Select Program/Section</option>
+                </select>
                 <div class="grid grid-cols-2 gap-2">
                     <select id="select-teacher" required class="bg-slate-800 border-slate-700 rounded-xl p-3 text-white">
                         <option value="">Select Teacher</option>
@@ -114,14 +116,8 @@
                     </select>
                 </div>
                 <div class="grid grid-cols-2 gap-2">
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[10px] uppercase font-bold text-slate-500 ml-2">Start Time</label>
-                        <input type="datetime-local" id="class-start" required class="bg-slate-800 border-slate-700 rounded-xl p-3 text-white text-sm">
-                    </div>
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[10px] uppercase font-bold text-slate-500 ml-2">End Time</label>
-                        <input type="datetime-local" id="class-end" required class="bg-slate-800 border-slate-700 rounded-xl p-3 text-white text-sm">
-                    </div>
+                    <input type="datetime-local" id="class-start" required class="bg-slate-800 border-slate-700 rounded-xl p-3 text-white text-sm">
+                    <input type="datetime-local" id="class-end" required class="bg-slate-800 border-slate-700 rounded-xl p-3 text-white text-sm">
                 </div>
                 <button type="submit" class="w-full py-4 bg-pink-600 rounded-2xl font-bold">Save Schedule</button>
             </form>
@@ -132,25 +128,10 @@
         <div class="bg-slate-900 w-full max-w-sm rounded-3xl p-8 border border-slate-800">
             <h2 class="text-2xl font-bold text-white mb-6">Admin Sign In</h2>
             <form id="form-login" class="space-y-4">
-                <input type="text" id="login-user" placeholder="Full Name (as in Profiles)" required class="w-full bg-slate-800 border-slate-700 rounded-xl p-4 text-white">
-                <p class="text-xs text-slate-500 italic">Enter your full name to verify admin status.</p>
+                <input type="text" id="login-user" placeholder="Full Name" required class="w-full bg-slate-800 border-slate-700 rounded-xl p-4 text-white">
                 <button type="submit" class="w-full py-4 bg-white text-slate-900 font-bold rounded-xl">Verify & Enter</button>
             </form>
             <button class="close-modal w-full mt-4 text-slate-500">Cancel</button>
-        </div>
-    </div>
-
-    <div id="modal-ai" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md hidden items-center justify-end z-[100]">
-        <div class="bg-slate-900 w-full max-w-md h-full flex flex-col border-l border-slate-800">
-            <div class="p-6 border-b border-slate-800 flex justify-between items-center">
-                <h3 class="font-bold text-white">AI Assistant</h3>
-                <button class="close-modal"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-width="2"></path></svg></button>
-            </div>
-            <div id="chat-messages" class="flex-grow overflow-y-auto p-6 flex flex-col gap-4"></div>
-            <form id="form-chat" class="p-4 bg-slate-950 flex gap-2">
-                <input type="text" id="chat-input" placeholder="Ask about schedules..." class="flex-grow bg-slate-800 rounded-xl p-3 text-white">
-                <button type="submit" class="p-3 bg-blue-600 rounded-xl">Send</button>
-            </form>
         </div>
     </div>
 
@@ -159,7 +140,6 @@
             url: "https://nwwkgmlnnlsmbjrvcnaj.supabase.co",
             anonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im53d2tnbWxubmxzbWJqcnZjbmFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3OTYxMDcsImV4cCI6MjA4MTM3MjEwN30.Stz0PC0XAxlAkmHpWxY9reIeVzbXaDKuiSUOrJ4HB7Y"
         };
-        const GEMINI_API_KEY = "AIzaSyALJamFpolfBxaOMWidlkZRK2dk4Gx3mH8";
 
         const supabase = (SUPABASE_CONFIG.url.includes("YOUR_")) 
             ? null 
@@ -168,82 +148,69 @@
         let isAdmin = false;
         let calendar = null;
 
-        // Initialize Calendar
         async function initCalendar() {
             const el = document.getElementById('calendar');
             if (calendar) calendar.destroy();
             
             calendar = new FullCalendar.Calendar(el, {
                 initialView: 'timeGridDay',
-                headerToolbar: { left: 'prev,next today', center: 'title', right: 'timeGridWeek,timeGridDay' },
+                headerToolbar: { 
+                    left: 'prev,next today', 
+                    center: 'title', 
+                    right: 'timeGridWeek,timeGridDay' 
+                },
                 slotMinTime: '07:00:00',
                 slotMaxTime: '18:00:00',
                 allDaySlot: false,
-                height: '100%',
+                height: 'parent', // Makes calendar fill its direct container
+                expandRows: true,
+                nowIndicator: true,
                 events: async (info, success, failure) => {
-                    if (!supabase) return success([{ title: 'Set up Supabase!', start: new Date().toISOString(), end: new Date().toISOString(), color: '#ec4899' }]);
-                    
+                    if (!supabase) return success([]);
                     try {
-                        // FIX: Explicitly specify foreign key names to resolve relationships correctly
                         const { data, error } = await supabase
                             .from('classes')
                             .select(`
                                 id, subject, start_time, end_time,
-                                teacher:profiles!teacher_id(full_name),
+                                profiles!teacher_id(full_name),
                                 programs!program_id(grade_level, section),
                                 rooms!room_id(name)
                             `);
                         
                         if (error) throw error;
                         
-                        const events = data.map(c => ({
+                        success(data.map(c => ({
                             id: c.id,
-                            title: `${c.subject}\n${c.programs?.grade_level}-${c.programs?.section}\n${c.rooms?.name || ''}`,
+                            title: `${c.subject} (${c.rooms?.name || 'N/A'})`,
                             start: c.start_time,
                             end: c.end_time,
                             color: '#ec4899',
-                            extendedProps: {
-                                teacher: c.teacher?.full_name
-                            }
-                        }));
-                        success(events);
+                            description: `Teacher: ${c.profiles?.full_name || 'Unknown'}`
+                        })));
                     } catch (err) { 
                         console.error("Calendar fetch error:", err);
-                        failure(err); 
+                        const { data } = await supabase.from('classes').select('*');
+                        if (data) success(data.map(i => ({ title: i.subject, start: i.start_time, end: i.end_time, color: '#444' })));
+                        else failure(err);
                     }
                 }
             });
             calendar.render();
         }
 
-        // Fetch Dropdown Data
         async function loadFormSelectors() {
             if (!supabase) return;
-            try {
-                const [teachersRes, programsRes, roomsRes] = await Promise.all([
-                    supabase.from('profiles').select('id, full_name').in('role', ['teacher', 'admin']),
-                    supabase.from('programs').select('id, name, grade_level, section'),
-                    supabase.from('rooms').select('id, name')
-                ]);
-                
-                const teacherSelect = document.getElementById('select-teacher');
-                const programSelect = document.getElementById('select-program');
-                const roomSelect = document.getElementById('select-room');
-                
-                teacherSelect.innerHTML = '<option value="">Select Teacher</option>' + 
-                    (teachersRes.data || []).map(t => `<option value="${t.id}">${t.full_name}</option>`).join('');
-                    
-                programSelect.innerHTML = '<option value="">Select Program/Section</option>' + 
-                    (programsRes.data || []).map(p => `<option value="${p.id}">${p.name}: G${p.grade_level} - ${p.section}</option>`).join('');
-
-                roomSelect.innerHTML = '<option value="">Select Room</option>' + 
-                    (roomsRes.data || []).map(r => `<option value="${r.id}">${r.name}</option>`).join('');
-            } catch (err) {
-                console.error("Dropdown loading failed:", err);
-            }
+            const [t, p, r] = await Promise.all([
+                supabase.from('profiles').select('id, full_name').in('role', ['teacher', 'admin']),
+                supabase.from('programs').select('id, grade_level, section'),
+                supabase.from('rooms').select('id, name')
+            ]);
+            
+            if (t.data) document.getElementById('select-teacher').innerHTML = '<option value="">Select Teacher</option>' + t.data.map(x => `<option value="${x.id}">${x.full_name}</option>`).join('');
+            if (p.data) document.getElementById('select-program').innerHTML = '<option value="">Select Program</option>' + p.data.map(x => `<option value="${x.id}">G${x.grade_level} - ${x.section}</option>`).join('');
+            if (r.data) document.getElementById('select-room').innerHTML = '<option value="">Select Room</option>' + r.data.map(x => `<option value="${x.id}">${x.name}</option>`).join('');
         }
 
-        // Tab Switching Logic
         function switchTab(tabId, event) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
             document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active-tab'));
@@ -251,111 +218,53 @@
             const targetTab = document.getElementById(`tab-${tabId}`);
             if (targetTab) targetTab.classList.remove('hidden');
 
-            // Handle UI highlighting
-            let sidebarBtn;
-            if (event) {
-                sidebarBtn = event.currentTarget;
-            } else {
-                sidebarBtn = document.querySelector(`.sidebar-item[data-tab="${tabId}"]`);
-            }
-            if (sidebarBtn) sidebarBtn.classList.add('active-tab');
+            const btn = (event && event.currentTarget) 
+                ? event.currentTarget 
+                : document.querySelector(`.sidebar-item[data-tab="${tabId}"]`);
+            
+            if (btn) btn.classList.add('active-tab');
 
             if(tabId === 'calendar') {
                 setTimeout(() => {
                     if (!calendar) initCalendar();
-                    else {
-                        calendar.updateSize();
-                        calendar.refetchEvents();
-                    }
+                    else { calendar.updateSize(); calendar.refetchEvents(); }
                 }, 100);
             }
         }
 
-        // Admin Verification
         document.getElementById('form-login').onsubmit = async (e) => {
             e.preventDefault();
             const name = document.getElementById('login-user').value;
-            
             if (supabase) {
-                const { data, error } = await supabase
-                    .from('profiles')
-                    .select('role')
-                    .eq('full_name', name)
-                    .single();
-                
+                const { data } = await supabase.from('profiles').select('role').eq('full_name', name).single();
                 if (data && (data.role === 'admin' || data.role === 'teacher')) {
                     isAdmin = true;
                     updateAuthUI();
                     document.getElementById('modal-login').classList.replace('flex', 'hidden');
                     loadFormSelectors();
-                } else {
-                    alert("Verification failed. Check name spelling.");
-                }
-            } else {
-                isAdmin = true;
-                updateAuthUI();
-                document.getElementById('modal-login').classList.replace('flex', 'hidden');
-            }
-        };
-
-        // Class Insertion
-        document.getElementById('form-new-class').onsubmit = async (e) => {
-            e.preventDefault();
-            const payload = {
-                subject: document.getElementById('class-subject').value,
-                start_time: document.getElementById('class-start').value,
-                end_time: document.getElementById('class-end').value,
-                teacher_id: document.getElementById('select-teacher').value,
-                program_id: document.getElementById('select-program').value,
-                room_id: document.getElementById('select-room').value
-            };
-
-            if (supabase) {
-                const { error } = await supabase.from('classes').insert([payload]);
-                if (error) alert("Error: " + error.message);
-                else {
-                    calendar.refetchEvents();
-                    document.getElementById('modal-add-class').classList.replace('flex', 'hidden');
-                    e.target.reset();
-                }
+                } else alert("Access Denied");
             }
         };
 
         function updateAuthUI() {
             const badge = document.getElementById('status-badge');
-            const authBtn = document.getElementById('auth-trigger');
             const adminActions = document.getElementById('admin-actions');
             if(isAdmin) {
                 badge.innerHTML = '<span class="w-2 h-2 rounded-full bg-green-500"></span> ADMIN';
-                badge.className = 'flex items-center gap-2 px-3 py-1 rounded-full bg-green-500/10 text-green-400 text-xs font-bold';
-                authBtn.textContent = 'Sign Out';
                 adminActions.classList.remove('hidden');
-            } else {
-                badge.innerHTML = '<span class="w-2 h-2 rounded-full bg-pink-500"></span> VISITOR';
-                badge.className = 'flex items-center gap-2 px-3 py-1 rounded-full bg-pink-500/10 text-pink-400 text-xs font-bold';
-                authBtn.textContent = 'Admin Login';
-                adminActions.classList.add('hidden');
+                document.getElementById('auth-trigger').textContent = 'Sign Out';
             }
         }
 
         document.getElementById('auth-trigger').onclick = () => {
-            if(isAdmin) { isAdmin = false; updateAuthUI(); } 
+            if(isAdmin) { isAdmin = false; location.reload(); }
             else document.getElementById('modal-login').classList.replace('hidden', 'flex');
         };
 
-        document.getElementById('add-class-btn').onclick = () => {
-            document.getElementById('modal-add-class').classList.replace('hidden', 'flex');
-        };
+        document.getElementById('add-class-btn').onclick = () => document.getElementById('modal-add-class').classList.replace('hidden', 'flex');
+        document.querySelectorAll('.close-modal').forEach(btn => btn.onclick = () => btn.closest('.fixed').classList.replace('flex', 'hidden'));
 
-        document.querySelectorAll('.close-modal').forEach(btn => {
-            btn.onclick = () => btn.closest('.fixed').classList.replace('flex', 'hidden');
-        });
-
-        document.getElementById('ai-trigger').onclick = () => {
-            document.getElementById('modal-ai').classList.replace('hidden', 'flex');
-        };
-
-        window.onload = () => switchTab('map');
+        window.onload = () => switchTab('map', null);
     </script>
 </body>
 </html>
