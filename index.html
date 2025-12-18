@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>BCSTEC Smart Kiosk</title>
+    <title>BCSTEC Smart Kiosk | Elite Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/main.min.css' rel='stylesheet' />
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js'></script>
@@ -127,7 +127,6 @@
                 </button>
             </div>
             
-            <!-- DESKTOP FILTER SECTION -->
             <div class="glass-card p-4 rounded-2xl mb-4">
                 <p class="text-[10px] font-black text-pink-500 uppercase mb-3 tracking-widest">Section Filter</p>
                 <div class="flex p-1 bg-slate-900/50 rounded-lg mb-3">
@@ -135,7 +134,6 @@
                     <button type="button" onclick="setSchoolLevel('Senior High')" class="level-btn flex-1 py-1 text-[10px] font-bold rounded-md transition-all duration-200" data-level="Senior High">SHS</button>
                 </div>
                 <select id="program-select" onchange="handleProgramChange(this.value)" class="w-full bg-slate-800/50 border-none rounded-lg p-2 text-xs text-white outline-none ring-1 ring-white/10 focus:ring-pink-500">
-                    <!-- Loaded dynamically, "All Sections" removed -->
                 </select>
             </div>
 
@@ -146,12 +144,11 @@
         </div>
     </nav>
 
-    <!-- MAIN CONTENT AREA -->
     <main class="flex-grow flex flex-col relative overflow-hidden h-[calc(100dvh-80px)] lg:h-screen">
         <header class="h-16 lg:h-20 flex items-center justify-between px-4 lg:px-8 border-b border-white/5 bg-slate-950/40 backdrop-blur-md shrink-0">
             <div>
                 <h2 id="view-title" class="text-base lg:text-xl font-bold text-white leading-tight">Campus Navigator</h2>
-                <p id="view-subtitle" class="hidden lg:block text-[10px] text-slate-500 uppercase font-black tracking-widest">BCSTEC Online Interactive Platform</p>
+                <p id="view-subtitle" class="hidden lg:block text-[10px] text-slate-500 uppercase font-black tracking-widest">BCSTEC Elite Interactive Platform</p>
             </div>
 
             <div class="flex items-center gap-3 lg:gap-6">
@@ -166,10 +163,7 @@
             </div>
         </header>
 
-        <!-- TAB CONTENT CONTAINER -->
         <div class="flex-grow relative overflow-hidden">
-            
-            <!-- MAP VIEW -->
             <div id="tab-map" class="tab-content absolute inset-0 p-3 lg:p-8 flex flex-col scroll-container">
                 <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 h-full">
                     <div class="lg:col-span-3 glass-card rounded-2xl lg:rounded-3xl relative overflow-hidden flex items-center justify-center border-dashed border-2 border-white/10 min-h-[300px]">
@@ -205,7 +199,6 @@
                 </div>
             </div>
 
-            <!-- CALENDAR VIEW -->
             <div id="tab-calendar" class="tab-content absolute inset-0 hidden p-2 lg:p-6 flex flex-col">
                 <div class="lg:hidden flex gap-2 mb-3 overflow-x-auto pb-1 no-scrollbar shrink-0">
                     <button type="button" onclick="setSchoolLevel('Junior High')" class="level-btn active whitespace-nowrap px-4 py-2 bg-slate-900 border border-white/5 rounded-full text-[10px] font-bold" data-level="Junior High">JHS</button>
@@ -217,7 +210,6 @@
                 </div>
             </div>
 
-            <!-- STAFF VIEW -->
             <div id="tab-directory" class="tab-content absolute inset-0 hidden p-4 lg:p-8 flex flex-col">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 shrink-0">
                     <div>
@@ -230,13 +222,10 @@
                     </div>
                 </div>
                 <div id="directory-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 overflow-y-auto scroll-container pb-24">
-                    <!-- Loaded dynamically -->
                 </div>
             </div>
         </div>
     </main>
-
-    <!-- MODALS SECTION -->
     
     <!-- LOGIN MODAL -->
     <div id="modal-login" class="fixed inset-0 bg-slate-950/90 backdrop-blur-xl hidden items-center justify-center z-[100] p-4">
@@ -280,7 +269,7 @@
             </div>
             <div id="chat-box" class="flex-grow overflow-y-auto p-6 flex flex-col gap-5 bg-slate-950/40 scroll-container">
                 <div class="chat-bubble-bot p-5 rounded-2xl text-xs lg:text-sm self-start max-w-[85%] text-slate-300 border border-white/5 leading-relaxed">
-                    Mabuhay! I am the BCSTEC AI Navigator. I can help you find room locations, check schedules for specific sections, or provide teacher information. How can I assist you?
+                    Mabuhay! I am the BCSTEC AI Navigator. I have real-time access to the campus schedules. Try asking: "What is the current class for Grade 10-A?"
                 </div>
             </div>
             <div id="ai-loading" class="px-8 py-2 hidden shrink-0">
@@ -338,12 +327,11 @@
         </div>
     </div>
 
-    <!-- CORE SCRIPT -->
     <script>
         const apiKey = "AIzaSyCodsUAu0jPJwDCg7fnQzrRCD0ptuQyFfw";
         const CONFIG = {
             SUPABASE_URL: "https://nwwkgmlnnlsmbjrvcnaj.supabase.co",
-            SUPABASE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im53d2tnbWxubmxzbWJqcnZjbmFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3OTYxMDcsImV4cCI6MjA4MTM3MjEwN30.Stz0PC0XAxlAkmHpWxY9reIeVzbXaDKuiSUOrJ4HB7Y", // Filled at runtime
+            SUPABASE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im53d2tnbWxubmxzbWJqcnZjbmFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3OTYxMDcsImV4cCI6MjA4MTM3MjEwN30.Stz0PC0XAxlAkmHpWxY9reIeVzbXaDKuiSUOrJ4HB7Y",
             MODEL: "gemini-2.5-flash-preview-09-2025"
         };
 
@@ -354,7 +342,7 @@
             isAdmin: false,
             calendar: null,
             level: 'Junior High',
-            program: null, // Always specific, no more 'all'
+            program: null,
             allPrograms: [],
             rooms: [],
             chatHistory: []
@@ -392,17 +380,12 @@
 
         async function updateProgramSelect() {
             const filtered = state.allPrograms.filter(p => p.name === state.level);
-            
-            // Generate options without "All Sections"
             const options = filtered.map(p => `<option value="${p.id}">${p.grade_level}-${p.section}</option>`).join('');
-            
             const desktopSelect = document.getElementById('program-select');
             const mobileSelect = document.getElementById('mobile-program-select');
-            
             desktopSelect.innerHTML = options;
             if(mobileSelect) mobileSelect.innerHTML = options;
 
-            // Enforce selection of the first item to avoid lag or empty states
             if (filtered.length > 0) {
                 state.program = filtered[0].id;
                 desktopSelect.value = state.program;
@@ -424,46 +407,25 @@
         function renderCalendar() {
             const el = document.getElementById('calendar');
             const isMobile = window.innerWidth < 1024;
-
             if(state.calendar) {
                 state.calendar.changeView(isMobile ? 'listDay' : 'timeGridDay');
                 state.calendar.updateSize();
                 state.calendar.refetchEvents();
                 return;
             }
-
             state.calendar = new FullCalendar.Calendar(el, {
                 initialView: isMobile ? 'listDay' : 'timeGridDay',
-                headerToolbar: { 
-                    left: 'prev,next today', 
-                    center: 'title', 
-                    right: isMobile ? '' : 'timeGridDay,timeGridWeek' 
-                },
-                slotMinTime: '07:00:00',
-                slotMaxTime: '18:00:00',
-                allDaySlot: false,
-                height: '100%',
-                nowIndicator: true,
+                headerToolbar: { left: 'prev,next today', center: 'title', right: isMobile ? '' : 'timeGridDay,timeGridWeek' },
+                slotMinTime: '07:00:00', slotMaxTime: '18:00:00',
+                allDaySlot: false, height: '100%', nowIndicator: true,
                 dayHeaderFormat: { weekday: 'long' },
                 events: async (info, success, failure) => {
-                    // Safety check: Don't query without a specific program
                     if(!state.program) return success([]);
-
-                    const { data, error } = await supabase
-                        .from('classes')
-                        .select(`
-                            id, subject, start_time, end_time, 
-                            profiles!teacher_id(full_name), 
-                            rooms!classes_room_id_fkey(name)
-                        `)
-                        .eq('program_id', state.program);
-
+                    const { data, error } = await supabase.from('classes').select(`id, subject, start_time, end_time, profiles!teacher_id(full_name), rooms!classes_room_id_fkey(name)`).eq('program_id', state.program);
                     if(error) return failure(error);
-
                     success(data.map(c => ({
                         title: `${c.subject} (${c.rooms?.name || 'No Room'})`,
-                        start: c.start_time,
-                        end: c.end_time,
+                        start: c.start_time, end: c.end_time,
                         description: `Teacher: ${c.profiles?.full_name || 'TBA'}`,
                         backgroundColor: state.level === 'Junior High' ? '#ec4899' : '#8b5cf6'
                     })));
@@ -483,67 +445,38 @@
                     <div class="flex-grow">
                         <h4 class="font-bold text-white text-base group-hover:text-pink-400 transition-colors">${p.full_name}</h4>
                         <p class="text-[9px] text-slate-500 font-black uppercase tracking-[0.2em] mt-1">${p.role}</p>
-                        <div class="flex gap-2 mt-3">
-                            <span class="w-6 h-6 rounded-lg bg-slate-800 flex items-center justify-center text-[10px] text-slate-400"><i class="fa-solid fa-envelope"></i></span>
-                            <span class="w-6 h-6 rounded-lg bg-slate-800 flex items-center justify-center text-[10px] text-slate-400"><i class="fa-solid fa-phone"></i></span>
-                        </div>
                     </div>
                 </div>
             `).join('');
         }
 
-        async function handleLogin(e) {
-            e.preventDefault();
-            const { data, error } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('full_name', document.getElementById('login-name').value)
-                .eq('passkey', document.getElementById('login-pass').value)
+        // --- AI LOGIC ---
+
+        async function findCurrentClass(grade, section) {
+            // Find program ID first
+            const { data: prog } = await supabase
+                .from('programs')
+                .select('id')
+                .eq('grade_level', grade)
+                .ilike('section', section)
+                .single();
+            
+            if(!prog) return "I couldn't find a program with that grade and section. Please verify the name.";
+
+            const now = new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' });
+            const isoNow = new Date(now).toISOString();
+
+            const { data: classData } = await supabase
+                .from('classes')
+                .select(`subject, start_time, end_time, rooms!classes_room_id_fkey(name), profiles!teacher_id(full_name)`)
+                .eq('program_id', prog.id)
+                .lte('start_time', isoNow)
+                .gte('end_time', isoNow)
                 .single();
 
-            if (data && (data.role === 'admin' || data.role === 'teacher')) {
-                state.user = data;
-                state.isAdmin = true;
-                document.getElementById('modal-login').classList.replace('flex', 'hidden');
-                document.getElementById('login-trigger').innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400 lg:mr-2"></i><span class="hidden lg:inline">Admin Mode</span>`;
-                document.getElementById('admin-controls').classList.remove('hidden');
-                document.getElementById('mobile-admin-btn').classList.remove('hidden');
-            } else {
-                const btn = e.target.querySelector('button');
-                btn.textContent = "Invalid Credentials";
-                btn.classList.replace('bg-pink-600', 'bg-red-600');
-                setTimeout(() => {
-                    btn.textContent = "Unlock Console";
-                    btn.classList.replace('bg-red-600', 'bg-pink-600');
-                }, 2000);
-            }
-        }
+            if(!classData) return `There is currently no scheduled class for ${grade}-${section} at this moment.`;
 
-        async function handleClassSubmit(e) {
-            e.preventDefault();
-            if(!state.user) return;
-
-            const dateVal = document.getElementById('class-date').value;
-            const startVal = document.getElementById('class-start').value;
-            const endVal = document.getElementById('class-end').value;
-
-            // PHILIPPINE TIMEZONE (+08:00)
-            const phOffset = "+08:00";
-            const payload = {
-                subject: document.getElementById('class-subject').value,
-                program_id: document.getElementById('class-program').value,
-                room_id: document.getElementById('class-room').value,
-                start_time: `${dateVal}T${startVal}:00${phOffset}`,
-                end_time: `${dateVal}T${endVal}:00${phOffset}`,
-                teacher_id: state.user.id
-            };
-
-            const { error } = await supabase.from('classes').insert([payload]);
-            if(!error) {
-                document.getElementById('modal-class').classList.replace('flex', 'hidden');
-                if(state.calendar) state.calendar.refetchEvents();
-                e.target.reset();
-            }
+            return `Currently, ${grade}-${section} is having ${classData.subject} in ${classData.rooms?.name || 'their assigned room'} with ${classData.profiles?.full_name || 'their teacher'}. It started at ${new Date(classData.start_time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})} and ends at ${new Date(classData.end_time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}.`;
         }
 
         async function handleAIChat(e) {
@@ -558,13 +491,25 @@
             chatBox.scrollTop = chatBox.scrollHeight;
             document.getElementById('ai-loading').classList.remove('hidden');
 
+            // Determine if we need to call the schedule tool
+            const scheduleMatch = msg.match(/class for (grade\s?\d+)-?(\w+)/i) || msg.match(/class for (\d+)-?(\w+)/i);
+            let contextData = "";
+            
+            if (scheduleMatch) {
+                const grade = scheduleMatch[1].toLowerCase().includes('grade') ? scheduleMatch[1].replace(/grade\s?/i, '') : scheduleMatch[1];
+                const section = scheduleMatch[2];
+                contextData = await findCurrentClass(grade, section);
+            }
+
+            const phTime = new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila', hour: '2-digit', minute: '2-digit', weekday: 'long', month: 'long', day: 'numeric' });
+
             try {
                 const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.MODEL}:generateContent?key=${apiKey}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        contents: [{ parts: [{ text: msg }] }],
-                        systemInstruction: { parts: [{ text: "You are the BCSTEC Smart Assistant for Bayawan City Science and Technology Education Center. Provide helpful, polite navigation and scheduling info. Keep answers concise." }] }
+                        contents: [{ parts: [{ text: `User: ${msg}\n\n[CONTEXT: Current PH Time is ${phTime}. ${contextData}]` }] }],
+                        systemInstruction: { parts: [{ text: "You are the BCSTEC Smart Assistant. Provide helpful, polite navigation and scheduling info. You have access to real-time Philippine time and schedule data provided in the context. If the user asks for the current class, use the provided context to answer. If no context is provided for a schedule question, ask them to specify the grade and section (e.g. 10-A)." }] }
                     })
                 });
                 const result = await res.json();
@@ -577,7 +522,40 @@
             }
         }
 
-        // --- INIT & HELPERS ---
+        async function handleLogin(e) {
+            e.preventDefault();
+            const { data } = await supabase.from('profiles').select('*').eq('full_name', document.getElementById('login-name').value).eq('passkey', document.getElementById('login-pass').value).single();
+            if (data && (data.role === 'admin' || data.role === 'teacher')) {
+                state.user = data; state.isAdmin = true;
+                document.getElementById('modal-login').classList.replace('flex', 'hidden');
+                document.getElementById('login-trigger').innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400 lg:mr-2"></i><span class="hidden lg:inline">Admin Mode</span>`;
+                document.getElementById('admin-controls').classList.remove('hidden');
+                document.getElementById('mobile-admin-btn').classList.remove('hidden');
+            }
+        }
+
+        async function handleClassSubmit(e) {
+            e.preventDefault();
+            if(!state.user) return;
+            const dateVal = document.getElementById('class-date').value;
+            const startVal = document.getElementById('class-start').value;
+            const endVal = document.getElementById('class-end').value;
+            const phOffset = "+08:00";
+            const payload = {
+                subject: document.getElementById('class-subject').value,
+                program_id: document.getElementById('class-program').value,
+                room_id: document.getElementById('class-room').value,
+                start_time: `${dateVal}T${startVal}:00${phOffset}`,
+                end_time: `${dateVal}T${endVal}:00${phOffset}`,
+                teacher_id: state.user.id
+            };
+            const { error } = await supabase.from('classes').insert([payload]);
+            if(!error) {
+                document.getElementById('modal-class').classList.replace('flex', 'hidden');
+                if(state.calendar) state.calendar.refetchEvents();
+                e.target.reset();
+            }
+        }
 
         function openClassModal() {
             document.getElementById('modal-class').classList.replace('hidden', 'flex');
@@ -597,21 +575,18 @@
         document.getElementById('login-trigger').onclick = () => document.getElementById('modal-login').classList.replace('hidden', 'flex');
 
         window.onload = async () => {
-            // Clock
             setInterval(() => {
-                const now = new Date();
-                document.getElementById('current-time').textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                document.getElementById('current-date').textContent = now.toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' });
+                const now = new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' });
+                const d = new Date(now);
+                document.getElementById('current-time').textContent = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                document.getElementById('current-date').textContent = d.toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' });
             }, 1000);
 
-            // App Data
             const { data } = await supabase.from('programs').select('*').order('grade_level');
             state.allPrograms = data || [];
             updateProgramSelect();
             switchTab('map');
         };
-
-        window.onresize = () => { if(state.calendar) state.calendar.updateSize(); };
     </script>
 </body>
-    </html>
+</html>
