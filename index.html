@@ -317,7 +317,7 @@
                         let query = supabase.from('classes').select(`
                             id, subject, start_time, end_time,
                             profiles:teacher_id(full_name),
-                            rooms:room_id(name)
+                            rooms!classes_room_id_fkey(name)
                         `);
 
                         if (currentProgramFilter !== 'all') {
