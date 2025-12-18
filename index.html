@@ -18,8 +18,18 @@
         .fc-toolbar-title { font-size: 1.25rem !important; font-weight: 800; color: #f8fafc !important; }
         .fc { --fc-border-color: rgba(255,255,255,0.05); --fc-page-bg-color: transparent; border: none !important; }
         .fc-theme-standard td, .fc-theme-standard th { border: 1px solid rgba(255,255,255,0.05) !important; }
-        .fc-timegrid-slot { height: 4em !important; }
-        .fc-event { border: none !important; border-radius: 8px !important; padding: 4px !important; box-shadow: 0 4px 12px rgba(0,0,0,0.3); cursor: pointer; }
+        
+        /* Adjusted height and padding to ensure blocks are visible */
+        .fc-timegrid-slot { height: 5em !important; }
+        .fc-event { 
+            border: none !important; 
+            border-radius: 8px !important; 
+            padding: 6px !important; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3); 
+            cursor: pointer;
+            min-height: 24px; /* Prevents "red line" visual on short durations */
+        }
+        .fc-event-main { font-weight: 600; font-size: 0.75rem; overflow: hidden; }
         
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
@@ -258,7 +268,7 @@
                 document.getElementById('auth-trigger').textContent = 'Logout';
                 document.getElementById('status-badge').classList.replace('bg-pink-500/10', 'bg-blue-500/10');
                 document.getElementById('badge-text').textContent = 'STAFF MODE';
-                loadAdminFormData(); // Load options for the Add Class modal
+                loadAdminFormData();
             } else {
                 alert("Invalid passkey or name.");
             }
@@ -271,24 +281,17 @@
 
         async function loadAdminFormData() {
             if (!supabase) return;
-            
-            // Load Rooms
             const { data: rooms } = await supabase.from('rooms').select('*');
             allRooms = rooms || [];
-            const roomSelect = document.getElementById('add-room');
-            roomSelect.innerHTML = '<option value="">Select Room</option>' + 
+            document.getElementById('add-room').innerHTML = '<option value="">Select Room</option>' + 
                 allRooms.map(r => `<option value="${r.id}">${r.name}</option>`).join('');
 
-            // Load Teachers
             const { data: teachers } = await supabase.from('profiles').select('*').in('role', ['admin', 'teacher']);
             allTeachers = teachers || [];
-            const teacherSelect = document.getElementById('add-teacher');
-            teacherSelect.innerHTML = '<option value="">Select Teacher</option>' + 
+            document.getElementById('add-teacher').innerHTML = '<option value="">Select Teacher</option>' + 
                 allTeachers.map(t => `<option value="${t.id}">${t.full_name}</option>`).join('');
 
-            // Load Programs
-            const progSelect = document.getElementById('add-program');
-            progSelect.innerHTML = '<option value="">Select Program</option>' + 
+            document.getElementById('add-program').innerHTML = '<option value="">Select Program</option>' + 
                 allPrograms.map(p => `<option value="${p.id}">${p.name} - Gr ${p.grade_level} (${p.section})</option>`).join('');
         }
 
@@ -296,21 +299,28 @@
             e.preventDefault();
             if (!supabase) return;
 
+            const startVal = document.getElementById('add-start').value;
+            const endVal = document.getElementById('add-end').value;
+
+            // Duration check to prevent "red lines"
+            if (new Date(endVal) <= new Date(startVal)) {
+                alert("The class end time must be after the start time.");
+                return;
+            }
+
             const newClass = {
                 subject: document.getElementById('add-subject').value,
                 room_id: document.getElementById('add-room').value,
-                start_time: document.getElementById('add-start').value,
-                end_time: document.getElementById('add-end').value,
+                start_time: startVal,
+                end_time: endVal,
                 program_id: document.getElementById('add-program').value,
                 teacher_id: document.getElementById('add-teacher').value,
-                day_of_week: new Date(document.getElementById('add-start').value).getDay()
+                day_of_week: new Date(startVal).getDay()
             };
 
             const { error } = await supabase.from('classes').insert([newClass]);
-            
-            if (error) {
-                alert("Error saving class: " + error.message);
-            } else {
+            if (error) alert("Error saving class: " + error.message);
+            else {
                 document.getElementById('modal-add-class').classList.replace('flex', 'hidden');
                 document.getElementById('form-add-class').reset();
                 if (calendar) calendar.refetchEvents();
@@ -373,15 +383,33 @@
                 events: async (info, success, failure) => {
                     if (!supabase) return success([]);
                     try {
-                        let query = supabase.from('classes').select(`id, subject, start_time, end_time, program_id, profiles!teacher_id(full_name), rooms!room_id(name)`);
-                        if (currentProgramFilter !== 'all') query = query.eq('program_id', currentProgramFilter);
-                        else {
+                        // FIX: Changed '!' to ':' for alias-based join resolving PGRST200
+                        let query = supabase.from('classes').select(`
+                            id, 
+                            subject, 
+                            start_time, 
+                            end_time, 
+                            program_id, 
+                            profiles:teacher_id(full_name), 
+                            rooms:room_id(name)
+                        `);
+
+                        if (currentProgramFilter !== 'all') {
+                            query = query.eq('program_id', currentProgramFilter);
+                        } else {
                             const validIds = allPrograms.filter(p => p.name === currentSchoolLevel).map(p => p.id);
-                            query = query.in('program_id', validIds);
+                            if (validIds.length > 0) query = query.in('program_id', validIds);
+                            else return success([]);
                         }
+                        
                         const { data, error } = await query;
                         if (error) throw error;
-                        success(data.map(c => ({ title: `${c.subject} - ${c.profiles?.full_name || 'Staff'} (${c.rooms?.name || '?'})`, start: c.start_time, end: c.end_time, color: '#ec4899' })));
+                        success(data.map(c => ({ 
+                            title: `${c.subject}\n${c.profiles?.full_name || 'Staff'}\n(${c.rooms?.name || '?'})`, 
+                            start: c.start_time, 
+                            end: c.end_time, 
+                            color: '#ec4899' 
+                        })));
                     } catch (err) { failure(err); }
                 }
             });
@@ -415,7 +443,7 @@
             document.getElementById(`tab-${id}`).classList.remove('hidden');
             document.querySelectorAll('.sidebar-item').forEach(x => x.classList.remove('active-tab'));
             if(e) e.currentTarget.classList.add('active-tab');
-            if(id === 'calendar') setTimeout(() => { if(!calendar) initCalendar(); else calendar.updateSize(); }, 100);
+            if(id === 'calendar') setTimeout(() => { if(!calendar) initCalendar(); else { calendar.updateSize(); calendar.refetchEvents(); } }, 100);
         }
 
         document.querySelectorAll('.close-modal').forEach(b => b.onclick = () => b.closest('.fixed').classList.replace('flex', 'hidden'));
