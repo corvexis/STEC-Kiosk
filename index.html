@@ -15,21 +15,30 @@
         .sidebar-item:hover { background: rgba(236, 72, 153, 0.1); color: #ec4899; }
         .active-tab { border-left: 4px solid #ec4899; background: rgba(236, 72, 153, 0.1); color: #ec4899; }
         
-        /* FullCalendar Custom Theming */
         .fc-toolbar-title { font-size: 1.25rem !important; font-weight: 800; color: #f8fafc !important; }
         .fc { --fc-border-color: rgba(255,255,255,0.05); --fc-page-bg-color: transparent; border: none !important; }
         .fc-theme-standard td, .fc-theme-standard th { border: 1px solid rgba(255,255,255,0.05) !important; }
         .fc-timegrid-slot { height: 4em !important; }
-        .fc-col-header-cell { padding: 12px 0 !important; background: rgba(15, 23, 42, 0.5); }
         .fc-event { border: none !important; border-radius: 8px !important; padding: 4px !important; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
         
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+
+        .message-bubble { max-width: 85%; padding: 12px 16px; border-radius: 20px; font-size: 0.875rem; line-height: 1.5; }
+        .message-bot { background: #1e293b; color: #f8fafc; border-bottom-left-radius: 4px; }
+        .message-user { background: #ec4899; color: white; border-bottom-right-radius: 4px; align-self: flex-end; }
+        
+        @keyframes typing {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+        .dot { animation: typing 1.4s infinite; }
+        .dot:nth-child(2) { animation-delay: 0.2s; }
+        .dot:nth-child(3) { animation-delay: 0.4s; }
     </style>
 </head>
 <body class="flex flex-col">
 
-    <!-- TOP NAVIGATION -->
     <header class="h-16 border-b border-slate-800 flex items-center justify-between px-6 bg-slate-900/50 backdrop-blur-md z-50">
         <div class="flex items-center gap-4">
             <h1 class="text-xl font-extrabold bg-gradient-to-r from-pink-500 to-violet-500 bg-clip-text text-transparent">STEC SMART KIOSK</h1>
@@ -44,7 +53,6 @@
     </header>
 
     <div class="flex flex-grow overflow-hidden">
-        <!-- SIDEBAR -->
         <aside class="w-20 md:w-64 border-r border-slate-800 bg-slate-900/30 flex flex-col p-4 gap-2">
             <button onclick="switchTab('map', event)" class="sidebar-item active-tab p-3 rounded-xl flex items-center gap-3 transition" data-tab="map">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" stroke-width="2"></path></svg>
@@ -66,15 +74,12 @@
             </div>
         </aside>
 
-        <!-- MAIN AREA -->
         <main class="flex-grow relative bg-slate-950 overflow-hidden">
-            <!-- Map Tab -->
             <div id="tab-map" class="tab-content absolute inset-0 p-6 flex flex-col gap-6">
                 <h2 class="text-2xl font-extrabold text-white">Campus Navigator</h2>
                 <div class="flex-grow glass-panel rounded-3xl flex items-center justify-center text-slate-500">Interactive Map View</div>
             </div>
 
-            <!-- Calendar Tab (No Box Container) -->
             <div id="tab-calendar" class="tab-content absolute inset-0 hidden flex flex-col">
                 <div class="px-6 pt-6 flex justify-between items-center bg-slate-950">
                     <h2 class="text-2xl font-extrabold text-white">Class Schedules</h2>
@@ -87,7 +92,6 @@
                 </div>
             </div>
 
-            <!-- Directory Tab -->
             <div id="tab-directory" class="tab-content absolute inset-0 p-6 hidden flex-col gap-6">
                 <h2 class="text-2xl font-extrabold text-white">Directory</h2>
                 <div id="directory-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 overflow-y-auto"></div>
@@ -95,7 +99,41 @@
         </main>
     </div>
 
-    <!-- MODALS -->
+    <!-- AI MODAL -->
+    <div id="modal-ai" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md hidden items-center justify-end z-[100]">
+        <div class="bg-slate-900 w-full max-w-md h-full flex flex-col border-l border-slate-800 shadow-2xl">
+            <div class="p-6 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z" stroke-width="2"></path></svg>
+                    </div>
+                    <h3 class="font-bold text-white">STEC AI Assistant</h3>
+                </div>
+                <button class="close-modal text-slate-400 hover:text-white transition"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-width="2"></path></svg></button>
+            </div>
+            
+            <div id="chat-messages" class="flex-grow overflow-y-auto p-6 flex flex-col gap-4">
+                <div class="message-bubble message-bot">
+                    Hello! I'm your STEC Smart Assistant. I have access to the current schedules, rooms, and teacher directory. How can I help you today?
+                </div>
+            </div>
+
+            <div id="typing-indicator" class="px-6 py-2 hidden">
+                <div class="message-bubble message-bot inline-flex items-center gap-1 italic text-slate-400">
+                    Thinking<span class="dot">.</span><span class="dot">.</span><span class="dot">.</span>
+                </div>
+            </div>
+
+            <form id="form-chat" class="p-4 bg-slate-950 border-t border-slate-800 flex gap-2">
+                <input type="text" id="chat-input" placeholder="e.g. Where is Mr. Hayes right now?" class="flex-grow bg-slate-800 border-none rounded-xl p-3 text-white focus:ring-2 focus:ring-blue-600 outline-none transition" autocomplete="off">
+                <button type="submit" class="p-3 bg-blue-600 hover:bg-blue-700 rounded-xl text-white transition shadow-lg shadow-blue-900/20">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7" stroke-width="2"></path></svg>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODALS FOR ADMIN -->
     <div id="modal-add-class" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center z-[100] p-4">
         <div class="bg-slate-900 w-full max-w-md rounded-3xl border border-slate-800 overflow-hidden">
             <div class="p-6 bg-pink-600 text-white flex justify-between items-center">
@@ -140,6 +178,7 @@
             url: "https://nwwkgmlnnlsmbjrvcnaj.supabase.co",
             anonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im53d2tnbWxubmxzbWJqcnZjbmFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3OTYxMDcsImV4cCI6MjA4MTM3MjEwN30.Stz0PC0XAxlAkmHpWxY9reIeVzbXaDKuiSUOrJ4HB7Y"
         };
+        const GEMINI_API_KEY = "AIzaSyALJamFpolfBxaOMWidlkZRK2dk4Gx3mH8"; // Provided at runtime
 
         const supabase = (SUPABASE_CONFIG.url.includes("YOUR_")) 
             ? null 
@@ -148,21 +187,48 @@
         let isAdmin = false;
         let calendar = null;
 
+        // --- CALENDAR & DATA HELPERS ---
+        async function getScheduleContext() {
+            if (!supabase) return "No database connection. The system is in offline mode.";
+            try {
+                const [classes, profiles, rooms, programs] = await Promise.all([
+                    supabase.from('classes').select('*, teacher:profiles(full_name), rooms(name), programs(name, grade_level, section)'),
+                    supabase.from('profiles').select('full_name, role'),
+                    supabase.from('rooms').select('name, building, floor'),
+                    supabase.from('programs').select('*')
+                ]);
+
+                return `
+                    Current Date/Time: ${new Date().toLocaleString()}
+                    
+                    Available Class Schedule:
+                    ${JSON.stringify(classes.data || [])}
+                    
+                    Staff Directory:
+                    ${JSON.stringify(profiles.data || [])}
+                    
+                    Rooms & Locations:
+                    ${JSON.stringify(rooms.data || [])}
+                    
+                    Programs:
+                    ${JSON.stringify(programs.data || [])}
+                `;
+            } catch (err) {
+                return "Error fetching real-time data.";
+            }
+        }
+
         async function initCalendar() {
             const el = document.getElementById('calendar');
             if (calendar) calendar.destroy();
             
             calendar = new FullCalendar.Calendar(el, {
                 initialView: 'timeGridDay',
-                headerToolbar: { 
-                    left: 'prev,next today', 
-                    center: 'title', 
-                    right: 'timeGridWeek,timeGridDay' 
-                },
+                headerToolbar: { left: 'prev,next today', center: 'title', right: 'timeGridWeek,timeGridDay' },
                 slotMinTime: '07:00:00',
                 slotMaxTime: '18:00:00',
                 allDaySlot: false,
-                height: 'parent', // Makes calendar fill its direct container
+                height: 'parent',
                 expandRows: true,
                 nowIndicator: true,
                 events: async (info, success, failure) => {
@@ -170,47 +236,90 @@
                     try {
                         const { data, error } = await supabase
                             .from('classes')
-                            .select(`
-                                id, subject, start_time, end_time,
-                                profiles!teacher_id(full_name),
-                                programs!program_id(grade_level, section),
-                                rooms!room_id(name)
-                            `);
-                        
+                            .select(`id, subject, start_time, end_time, profiles!teacher_id(full_name), rooms!room_id(name)`);
                         if (error) throw error;
-                        
                         success(data.map(c => ({
                             id: c.id,
                             title: `${c.subject} (${c.rooms?.name || 'N/A'})`,
                             start: c.start_time,
                             end: c.end_time,
-                            color: '#ec4899',
-                            description: `Teacher: ${c.profiles?.full_name || 'Unknown'}`
+                            color: '#ec4899'
                         })));
-                    } catch (err) { 
-                        console.error("Calendar fetch error:", err);
-                        const { data } = await supabase.from('classes').select('*');
-                        if (data) success(data.map(i => ({ title: i.subject, start: i.start_time, end: i.end_time, color: '#444' })));
-                        else failure(err);
-                    }
+                    } catch (err) { failure(err); }
                 }
             });
             calendar.render();
         }
 
-        async function loadFormSelectors() {
-            if (!supabase) return;
-            const [t, p, r] = await Promise.all([
-                supabase.from('profiles').select('id, full_name').in('role', ['teacher', 'admin']),
-                supabase.from('programs').select('id, grade_level, section'),
-                supabase.from('rooms').select('id, name')
-            ]);
+        // --- AI LOGIC ---
+        async function callGemini(prompt) {
+            const context = await getScheduleContext();
+            const systemPrompt = `
+                You are the STEC Smart Kiosk Assistant. 
+                You have access to the school's live database for classes, rooms, and staff.
+                Your goal is to help students and visitors find their way and check schedules.
+                Be concise, friendly, and accurate. 
+                If you don't know something, say you're not sure and suggest checking the directory tab.
+                
+                DATA CONTEXT:
+                ${context}
+            `;
+
+            let retryCount = 0;
+            const maxRetries = 5;
             
-            if (t.data) document.getElementById('select-teacher').innerHTML = '<option value="">Select Teacher</option>' + t.data.map(x => `<option value="${x.id}">${x.full_name}</option>`).join('');
-            if (p.data) document.getElementById('select-program').innerHTML = '<option value="">Select Program</option>' + p.data.map(x => `<option value="${x.id}">G${x.grade_level} - ${x.section}</option>`).join('');
-            if (r.data) document.getElementById('select-room').innerHTML = '<option value="">Select Room</option>' + r.data.map(x => `<option value="${x.id}">${x.name}</option>`).join('');
+            while (retryCount <= maxRetries) {
+                try {
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${GEMINI_API_KEY}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{ parts: [{ text: prompt }] }],
+                            systemInstruction: { parts: [{ text: systemPrompt }] }
+                        })
+                    });
+
+                    if (!response.ok) throw new Error('API Error');
+                    const result = await response.json();
+                    return result.candidates?.[0]?.content?.parts?.[0]?.text || "I'm sorry, I couldn't generate a response.";
+                } catch (err) {
+                    if (retryCount === maxRetries) return "I'm having trouble connecting to my brain right now. Please try again later.";
+                    const delay = Math.pow(2, retryCount) * 1000;
+                    await new Promise(r => setTimeout(r, delay));
+                    retryCount++;
+                }
+            }
         }
 
+        const chatMessages = document.getElementById('chat-messages');
+        const chatForm = document.getElementById('form-chat');
+        const typingIndicator = document.getElementById('typing-indicator');
+
+        function appendMessage(text, role) {
+            const msg = document.createElement('div');
+            msg.className = `message-bubble ${role === 'user' ? 'message-user' : 'message-bot'}`;
+            msg.textContent = text;
+            chatMessages.appendChild(msg);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        chatForm.onsubmit = async (e) => {
+            e.preventDefault();
+            const input = document.getElementById('chat-input');
+            const prompt = input.value.trim();
+            if (!prompt) return;
+
+            input.value = '';
+            appendMessage(prompt, 'user');
+            
+            typingIndicator.classList.remove('hidden');
+            const response = await callGemini(prompt);
+            typingIndicator.classList.add('hidden');
+            
+            appendMessage(response, 'bot');
+        };
+
+        // --- UI & TAB LOGIC ---
         function switchTab(tabId, event) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
             document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active-tab'));
@@ -221,7 +330,6 @@
             const btn = (event && event.currentTarget) 
                 ? event.currentTarget 
                 : document.querySelector(`.sidebar-item[data-tab="${tabId}"]`);
-            
             if (btn) btn.classList.add('active-tab');
 
             if(tabId === 'calendar') {
@@ -256,6 +364,18 @@
             }
         }
 
+        async function loadFormSelectors() {
+            if (!supabase) return;
+            const [t, p, r] = await Promise.all([
+                supabase.from('profiles').select('id, full_name').in('role', ['teacher', 'admin']),
+                supabase.from('programs').select('id, grade_level, section'),
+                supabase.from('rooms').select('id, name')
+            ]);
+            if (t.data) document.getElementById('select-teacher').innerHTML = '<option value="">Select Teacher</option>' + t.data.map(x => `<option value="${x.id}">${x.full_name}</option>`).join('');
+            if (p.data) document.getElementById('select-program').innerHTML = '<option value="">Select Program</option>' + p.data.map(x => `<option value="${x.id}">G${x.grade_level} - ${x.section}</option>`).join('');
+            if (r.data) document.getElementById('select-room').innerHTML = '<option value="">Select Room</option>' + r.data.map(x => `<option value="${x.id}">${x.name}</option>`).join('');
+        }
+
         document.getElementById('auth-trigger').onclick = () => {
             if(isAdmin) { isAdmin = false; location.reload(); }
             else document.getElementById('modal-login').classList.replace('hidden', 'flex');
@@ -263,6 +383,7 @@
 
         document.getElementById('add-class-btn').onclick = () => document.getElementById('modal-add-class').classList.replace('hidden', 'flex');
         document.querySelectorAll('.close-modal').forEach(btn => btn.onclick = () => btn.closest('.fixed').classList.replace('flex', 'hidden'));
+        document.getElementById('ai-trigger').onclick = () => document.getElementById('modal-ai').classList.replace('hidden', 'flex');
 
         window.onload = () => switchTab('map', null);
     </script>
