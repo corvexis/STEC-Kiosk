@@ -138,9 +138,9 @@
         <section id="page-schedule" class="page-container p-4">
             <div class="flex flex-col lg:flex-row gap-4 h-full">
                 <div class="w-full lg:w-72 flex flex-col gap-4">
-                    <!-- VIEWING FILTERS -->
+                    <!-- PUBLIC FILTERS -->
                     <div class="bg-gray-900 p-5 rounded-3xl border border-gray-800">
-                        <label class="text-[10px] font-black text-pink-500 uppercase tracking-widest mb-3 block">Viewing Level</label>
+                        <label class="text-[10px] font-black text-pink-500 uppercase tracking-widest mb-3 block">Level Select</label>
                         <div class="flex gap-2 mb-4">
                             <button onclick="app.setLevel('Junior High')" id="lvl-jhs" class="flex-1 py-3 bg-pink-600 rounded-2xl text-xs font-bold">JHS</button>
                             <button onclick="app.setLevel('Senior High')" id="lvl-shs" class="flex-1 py-3 bg-gray-800 rounded-2xl text-xs font-bold">SHS</button>
@@ -148,7 +148,7 @@
 
                         <div class="space-y-3">
                             <div>
-                                <label class="text-[9px] font-bold text-gray-500 ml-1 mb-1 block uppercase">Grade</label>
+                                <label class="text-[9px] font-bold text-gray-500 ml-1 mb-1 block uppercase">Grade Level</label>
                                 <select id="filter-grade" onchange="app.updateFilterSections()" class="w-full bg-gray-950 border border-gray-800 p-3 rounded-xl text-xs outline-none focus:border-pink-500 text-white">
                                     <option value="">All Grades</option>
                                 </select>
@@ -389,25 +389,20 @@
                 // Initial filter population
                 app.populateDropdowns('filter-grade', 'filter-section');
             },
-            // Shared logic for populating grade/section/room dropdowns
             populateDropdowns(gradeElId, sectionElId, roomElId = null) {
-                const filteredPrograms = state.programs.filter(x => x.name === state.currentLevel);
+                // Filter by level name (Junior High or Senior High)
+                const levelProgs = state.programs.filter(x => x.name === state.currentLevel);
                 
-                // Extract Grades
-                const grades = [...new Set(filteredPrograms.map(p => {
-                    const match = (p.description || "").match(/Grade\s\d+/i);
-                    return match ? match[0] : null;
-                }))].filter(Boolean);
+                // Use grade_level column for grades
+                const grades = [...new Set(levelProgs.map(p => p.grade_level))].filter(Boolean).sort();
 
                 const gradeEl = document.getElementById(gradeElId);
                 gradeEl.innerHTML = `<option value="">${gradeElId.includes('filter') ? 'All Grades' : 'Select Grade'}</option>` + 
                     grades.map(g => `<option value="${g}">${g}</option>`).join('');
 
-                // Reset section
                 const sectionEl = document.getElementById(sectionElId);
                 sectionEl.innerHTML = `<option value="">${sectionElId.includes('filter') ? 'All Sections' : 'Select Section'}</option>`;
 
-                // Room (if provided)
                 if(roomElId) {
                     const roomEl = document.getElementById(roomElId);
                     roomEl.innerHTML = state.rooms.map(x => `<option value="${x.id}">${x.name}</option>`).join('');
@@ -415,19 +410,17 @@
             },
             updateSectionOptions(gradeElId, sectionElId) {
                 const gradeVal = document.getElementById(gradeElId).value;
-                const filteredPrograms = state.programs.filter(x => x.name === state.currentLevel);
+                const levelProgs = state.programs.filter(x => x.name === state.currentLevel);
                 
-                let sections = filteredPrograms;
+                let sections = [];
                 if(gradeVal) {
-                    sections = filteredPrograms.filter(p => (p.description || "").includes(gradeVal));
+                    // Filter sections by selected grade_level
+                    sections = levelProgs.filter(p => p.grade_level === gradeVal);
                 }
 
                 const sectionEl = document.getElementById(sectionElId);
                 sectionEl.innerHTML = `<option value="">${sectionElId.includes('filter') ? 'All Sections' : 'Select Section'}</option>` + 
-                    sections.map(s => {
-                        const name = gradeVal ? s.description.replace(gradeVal, '').replace('-', '').trim() : s.description;
-                        return `<option value="${s.id}">${name || s.description}</option>`;
-                    }).join('');
+                    sections.map(s => `<option value="${s.id}">${s.section || 'Unspecified'}</option>`).join('');
             },
             updateFilterSections() {
                 app.updateSectionOptions('filter-grade', 'filter-section');
@@ -453,7 +446,6 @@
                 document.getElementById('lvl-jhs').className = l === 'Junior High' ? "flex-1 py-3 bg-pink-600 rounded-2xl text-xs font-bold" : "flex-1 py-3 bg-gray-800 rounded-2xl text-xs font-bold";
                 document.getElementById('lvl-shs').className = l === 'Senior High' ? "flex-1 py-3 bg-pink-600 rounded-2xl text-xs font-bold" : "flex-1 py-3 bg-gray-800 rounded-2xl text-xs font-bold";
                 
-                // Re-populate filters for the new level
                 app.populateDropdowns('filter-grade', 'filter-section');
                 app.applyFilter();
                 
@@ -471,15 +463,12 @@
                         let programIds = [];
                         
                         if(state.filterSectionId) {
-                            // Specific section selected
                             programIds = [state.filterSectionId];
                         } else if (state.filterGrade) {
-                            // Specific grade selected
                             programIds = state.programs
-                                .filter(x => x.name === state.currentLevel && (x.description || "").includes(state.filterGrade))
+                                .filter(x => x.name === state.currentLevel && x.grade_level === state.filterGrade)
                                 .map(x => x.id);
                         } else {
-                            // Only level selected
                             programIds = state.programs.filter(x => x.name === state.currentLevel).map(x => x.id);
                         }
 
