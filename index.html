@@ -125,7 +125,6 @@
     </header>
 
     <main class="relative">
-        <!-- PAGE: MAP -->
         <section id="page-map" class="page-container active p-4">
             <div class="w-full h-full bg-gray-900/50 border-2 border-dashed border-gray-800 rounded-[2rem] flex flex-col items-center justify-center text-center p-6">
                 <i class="fa-solid fa-map-location-dot text-6xl text-gray-800 mb-4"></i>
@@ -134,11 +133,9 @@
             </div>
         </section>
 
-        <!-- PAGE: SCHEDULE -->
         <section id="page-schedule" class="page-container p-4">
             <div class="flex flex-col lg:flex-row gap-4 h-full">
                 <div class="w-full lg:w-72 flex flex-col gap-4">
-                    <!-- PUBLIC FILTERS -->
                     <div class="bg-gray-900 p-5 rounded-3xl border border-gray-800">
                         <label class="text-[10px] font-black text-pink-500 uppercase tracking-widest mb-3 block">Level Select</label>
                         <div class="flex gap-2 mb-4">
@@ -180,13 +177,11 @@
             </div>
         </section>
 
-        <!-- PAGE: DIRECTORY -->
         <section id="page-directory" class="page-container p-4">
             <div id="staff-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
         </section>
     </main>
 
-    <!-- FOOTER MOBILE TABS -->
     <footer class="md:hidden fixed bottom-0 left-0 right-0 h-[72px] bg-gray-900 border-t border-gray-800 flex items-center justify-around z-[100]">
         <button onclick="router.navigate('map')" id="mob-map" class="mob-link flex flex-col items-center text-pink-500"><i class="fa-solid fa-map"></i><span class="text-[8px] font-bold mt-1">MAP</span></button>
         <button onclick="router.navigate('schedule')" id="mob-schedule" class="mob-link flex flex-col items-center text-gray-500"><i class="fa-solid fa-calendar"></i><span class="text-[8px] font-bold mt-1">SCHED</span></button>
@@ -201,7 +196,7 @@
             <form onsubmit="app.createPost(event)" class="grid grid-cols-2 gap-4">
                 <div class="col-span-2">
                     <label class="text-[10px] font-bold text-gray-500 mb-1 ml-2 block uppercase">Event / Subject Name</label>
-                    <input type="text" id="f-subject" placeholder="Enter title (e.g. Physics 1)" required class="w-full bg-gray-950 border border-gray-800 p-4 rounded-xl text-sm outline-none focus:border-pink-500 text-white">
+                    <input type="text" id="f-subject" placeholder="Enter title" required class="w-full bg-gray-950 border border-gray-800 p-4 rounded-xl text-sm outline-none focus:border-pink-500 text-white">
                 </div>
                 
                 <div>
@@ -239,15 +234,6 @@
                 
                 <button type="submit" class="col-span-2 py-4 bg-pink-600 rounded-xl font-black tracking-widest mt-2 interactive-btn">PUBLISH TO KIOSK</button>
             </form>
-        </div>
-    </div>
-
-    <!-- MODAL: MANAGE -->
-    <div id="modal-manage" class="modal-wrap">
-        <div class="bg-gray-900 border border-gray-800 p-6 rounded-[2rem] w-full max-w-md shadow-2xl relative">
-            <button onclick="ui.closeModals()" class="absolute top-6 right-6 text-gray-500"><i class="fa-solid fa-times"></i></button>
-            <h3 class="text-xl font-black mb-4">Post Manager</h3>
-            <div id="manage-list" class="space-y-2 max-h-80 overflow-y-auto pr-2"></div>
         </div>
     </div>
 
@@ -338,31 +324,47 @@
                 document.getElementById('ai-input').value = '';
                 box.scrollTop = box.scrollHeight;
 
-                const sys = "You are the STEC AI Guide. Expert on STEM curriculum at Bayawan City Science and Technology Education Center. Be professional.";
+                const sys = "You are the STEC AI Guide for Bayawan City Science and Technology Education Center. You help students and staff with schedules, curriculum info, and campus guidance. Be direct, helpful, and professional.";
                 try {
                     const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({ contents: [{parts: [{text: q}]}], systemInstruction: {parts: [{text: sys}]} })
+                        body: JSON.stringify({ 
+                            contents: [{parts: [{text: q}]}], 
+                            systemInstruction: {parts: [{text: sys}]} 
+                        })
                     });
                     const d = await res.json();
-                    const txt = d.candidates?.[0]?.content?.parts?.[0]?.text || "System busy.";
+                    const txt = d.candidates?.[0]?.content?.parts?.[0]?.text || "I am currently processing your request. Please try again in a moment.";
                     const id = 'm'+Date.now();
-                    box.innerHTML += `<div class="msg msg-ai"><div id="${id}">${txt}</div><button onclick="ai.speak('${id}')" class="text-[9px] font-bold text-pink-500 mt-2">LISTEN</button></div>`;
+                    box.innerHTML += `<div class="msg msg-ai"><div id="${id}">${txt}</div><button onclick="ai.speak('${id}')" class="text-[9px] font-bold text-pink-500 mt-2 uppercase flex items-center gap-1"><i class="fa-solid fa-volume-high"></i> Listen</button></div>`;
                     box.scrollTop = box.scrollHeight;
-                } catch(e) { box.innerHTML += `<div class="msg msg-ai">Error.</div>`; }
+                } catch(e) { 
+                    box.innerHTML += `<div class="msg msg-ai">System encountered an error. Please check your connection.</div>`; 
+                }
             },
             async speak(id) {
                 const t = document.getElementById(id).innerText;
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ contents: [{parts: [{text: t}]}], generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Puck" } } } }, model: "gemini-2.5-flash-preview-tts" })
-                });
-                const d = await res.json();
-                const b64 = d.candidates[0].content.parts[0].inlineData.data;
-                const blob = ai.pcmToWav(b64, 24000);
-                new Audio(URL.createObjectURL(blob)).play();
+                try {
+                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ 
+                            contents: [{ parts: [{ text: t }] }], 
+                            generationConfig: { 
+                                responseModalities: ["AUDIO"], 
+                                speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Puck" } } } 
+                            }, 
+                            model: "gemini-2.5-flash-preview-tts" 
+                        })
+                    });
+                    const d = await res.json();
+                    const b64 = d.candidates[0].content.parts[0].inlineData.data;
+                    const blob = ai.pcmToWav(b64, 24000);
+                    new Audio(URL.createObjectURL(blob)).play();
+                } catch (err) {
+                    console.error("TTS failed", err);
+                }
             },
             pcmToWav(b, sr) {
                 const s = atob(b), l = s.length, bytes = new Uint8Array(l);
@@ -385,16 +387,15 @@
                 ]);
                 state.programs = p.data || [];
                 state.rooms = r.data || [];
-                
-                // Initial filter population
                 app.populateDropdowns('filter-grade', 'filter-section');
             },
             populateDropdowns(gradeElId, sectionElId, roomElId = null) {
-                // Filter by level name (Junior High or Senior High)
                 const levelProgs = state.programs.filter(x => x.name === state.currentLevel);
-                
-                // Use grade_level column for grades
-                const grades = [...new Set(levelProgs.map(p => p.grade_level))].filter(Boolean).sort();
+                const grades = [...new Set(levelProgs.map(p => p.grade_level))].filter(Boolean).sort((a,b) => {
+                    const numA = parseInt(a.replace(/\D/g,'')) || 0;
+                    const numB = parseInt(b.replace(/\D/g,'')) || 0;
+                    return numA - numB;
+                });
 
                 const gradeEl = document.getElementById(gradeElId);
                 gradeEl.innerHTML = `<option value="">${gradeElId.includes('filter') ? 'All Grades' : 'Select Grade'}</option>` + 
@@ -411,14 +412,14 @@
             updateSectionOptions(gradeElId, sectionElId) {
                 const gradeVal = document.getElementById(gradeElId).value;
                 const levelProgs = state.programs.filter(x => x.name === state.currentLevel);
+                const sectionEl = document.getElementById(sectionElId);
                 
-                let sections = [];
-                if(gradeVal) {
-                    // Filter sections by selected grade_level
-                    sections = levelProgs.filter(p => p.grade_level === gradeVal);
+                if(!gradeVal) {
+                    sectionEl.innerHTML = `<option value="">${sectionElId.includes('filter') ? 'All Sections' : 'Select Section'}</option>`;
+                    return;
                 }
 
-                const sectionEl = document.getElementById(sectionElId);
+                const sections = levelProgs.filter(p => p.grade_level === gradeVal);
                 sectionEl.innerHTML = `<option value="">${sectionElId.includes('filter') ? 'All Sections' : 'Select Section'}</option>` + 
                     sections.map(s => `<option value="${s.id}">${s.section || 'Unspecified'}</option>`).join('');
             },
@@ -445,10 +446,8 @@
                 state.currentLevel = l;
                 document.getElementById('lvl-jhs').className = l === 'Junior High' ? "flex-1 py-3 bg-pink-600 rounded-2xl text-xs font-bold" : "flex-1 py-3 bg-gray-800 rounded-2xl text-xs font-bold";
                 document.getElementById('lvl-shs').className = l === 'Senior High' ? "flex-1 py-3 bg-pink-600 rounded-2xl text-xs font-bold" : "flex-1 py-3 bg-gray-800 rounded-2xl text-xs font-bold";
-                
                 app.populateDropdowns('filter-grade', 'filter-section');
                 app.applyFilter();
-                
                 if (state.calendar) state.calendar.refetchEvents();
             },
             renderCalendar() {
@@ -460,59 +459,17 @@
                     slotMinTime: '07:00:00',
                     slotMaxTime: '18:00:00',
                     events: async (i, s) => {
-                        let programIds = [];
-                        
-                        if(state.filterSectionId) {
-                            programIds = [state.filterSectionId];
-                        } else if (state.filterGrade) {
-                            programIds = state.programs
-                                .filter(x => x.name === state.currentLevel && x.grade_level === state.filterGrade)
-                                .map(x => x.id);
-                        } else {
-                            programIds = state.programs.filter(x => x.name === state.currentLevel).map(x => x.id);
-                        }
+                        let pIds = [];
+                        if(state.filterSectionId) pIds = [state.filterSectionId];
+                        else if (state.filterGrade) pIds = state.programs.filter(x => x.name === state.currentLevel && x.grade_level === state.filterGrade).map(x => x.id);
+                        else pIds = state.programs.filter(x => x.name === state.currentLevel).map(x => x.id);
 
-                        if(programIds.length === 0) { s([]); return; }
-
-                        const { data } = await sb.from('classes').select('*, rooms(name)').in('program_id', programIds);
-                        s((data || []).map(c => ({ 
-                            id: c.id, 
-                            title: `${c.subject} (${c.rooms?.name})`, 
-                            start: c.start_time, 
-                            end: c.end_time 
-                        })));
+                        if(pIds.length === 0) { s([]); return; }
+                        const { data } = await sb.from('classes').select('*, rooms(name)').in('program_id', pIds);
+                        s((data || []).map(c => ({ id: c.id, title: `${c.subject} (${c.rooms?.name})`, start: c.start_time, end: c.end_time })));
                     }
                 });
                 state.calendar.render();
-            },
-            async createPost(e) {
-                e.preventDefault();
-                const post = {
-                    subject: document.getElementById('f-subject').value,
-                    program_id: document.getElementById('f-program').value,
-                    room_id: document.getElementById('f-room').value,
-                    start_time: `${document.getElementById('f-date').value}T${document.getElementById('f-start').value}:00`,
-                    end_time: `${document.getElementById('f-date').value}T${document.getElementById('f-end').value}:00`,
-                    profile_id: state.currentUser.id
-                };
-                const { error } = await sb.from('classes').insert(post);
-                if (!error) { ui.closeModals(); state.calendar.refetchEvents(); }
-            },
-            async loadUserPosts() {
-                const { data } = await sb.from('classes').select('*').eq('profile_id', state.currentUser.id);
-                document.getElementById('manage-list').innerHTML = (data || []).map(p => `
-                    <div class="p-4 bg-gray-800 rounded-2xl border border-gray-700 flex justify-between items-center">
-                        <div><h5 class="text-xs font-bold">${p.subject}</h5><p class="text-[9px] text-gray-500">${p.start_time.split('T')[0]}</p></div>
-                        <button onclick="app.deletePost('${p.id}')" class="text-pink-500"><i class="fa-solid fa-trash"></i></button>
-                    </div>`).join('');
-                ui.openModal('modal-manage');
-            },
-            async deletePost(id) {
-                if (confirm("Delete this?")) {
-                    await sb.from('classes').delete().eq('id', id);
-                    app.loadUserPosts();
-                    state.calendar.refetchEvents();
-                }
             },
             async loadDirectory() {
                 const { data } = await sb.from('profiles').select('*').order('full_name');
