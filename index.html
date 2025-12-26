@@ -2,7 +2,7 @@
 <html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>STEC Smart Kiosk</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/main.min.css' rel='stylesheet' />
@@ -20,13 +20,17 @@
             --glass-border: rgba(255, 255, 255, 0.08);
         }
 
+        /* Fix for mobile viewport height issues */
         body { 
             font-family: 'Outfit', sans-serif; 
             background: radial-gradient(circle at top right, #1e1b4b, #020617);
             color: #f8fafc;
             height: 100vh;
+            height: 100svh; /* Modern mobile viewport height */
             overflow: hidden;
             touch-action: manipulation;
+            display: flex;
+            flex-direction: column;
         }
 
         h1, h2, h3, .font-heading { font-family: 'Space Grotesk', sans-serif; }
@@ -47,7 +51,9 @@
             .sidebar-link.active { border-left: 3px solid var(--brand-primary); }
         }
         @media (max-width: 1023px) {
-            .sidebar-link.active { border-top: 3px solid var(--brand-primary); background: transparent; }
+            .sidebar-link.active { border-top: 3px solid var(--brand-primary); background: transparent; color: var(--brand-primary); }
+            /* Safe area spacing for modern phones (notches) */
+            nav { padding-bottom: env(safe-area-inset-bottom); }
         }
 
         .fc { --fc-border-color: rgba(255, 255, 255, 0.05); font-size: 0.85rem; }
@@ -57,6 +63,7 @@
             background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary)) !important;
             padding: 2px 4px !important;
             border-radius: 6px !important;
+            cursor: pointer;
         }
 
         ::-webkit-scrollbar { width: 4px; }
@@ -74,47 +81,57 @@
         .typing-dots span:nth-child(2) { animation-delay: -0.16s; }
         @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1.0); } }
         
-        /* Level Toggle Highlighting */
         .level-btn.active { 
             background-color: var(--brand-primary) !important; 
             color: white !important;
             box-shadow: 0 4px 12px rgba(236, 72, 153, 0.3);
         }
+
+        /* Hide scrollbar for mobile nav */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
-<body class="flex flex-col lg:flex-row overflow-hidden">
+<body class="lg:flex-row">
 
     <!-- NAVIGATION BAR -->
-    <nav class="order-last lg:order-first w-full lg:w-72 h-20 lg:h-full flex lg:flex-col glass border-t lg:border-t-0 lg:border-r border-white/5 z-50">
+    <nav class="order-last lg:order-first w-full lg:w-72 h-auto lg:h-full flex lg:flex-col glass border-t lg:border-t-0 lg:border-r border-white/5 z-50 shrink-0">
         <div class="hidden lg:block p-8 mb-4">
             <h1 class="text-2xl font-black tracking-tighter bg-gradient-to-r from-pink-500 to-violet-500 bg-clip-text text-transparent">STEC KIOSK</h1>
         </div>
 
-        <div class="flex flex-row lg:flex-col flex-grow justify-around lg:justify-start lg:space-y-2 px-2 lg:px-3">
-            <button type="button" onclick="switchTab('map', event)" data-tab="map" class="sidebar-link active flex-1 lg:flex-none p-4 rounded-xl flex flex-col lg:flex-row items-center gap-1 lg:gap-4 text-slate-400 hover:text-white">
-                <i class="fa-solid fa-map-location-dot text-xl"></i>
-                <span class="text-[10px] lg:text-sm font-bold lg:font-medium">Map</span>
+        <div class="flex flex-row lg:flex-col flex-grow justify-around lg:justify-start lg:space-y-2 px-1 lg:px-3 py-1 lg:py-0">
+            <button type="button" onclick="switchTab('map', event)" data-tab="map" class="sidebar-link active flex-1 lg:flex-none p-3 lg:p-4 rounded-xl flex flex-col lg:flex-row items-center gap-1 lg:gap-4 text-slate-400 hover:text-white">
+                <i class="fa-solid fa-map-location-dot text-lg lg:text-xl"></i>
+                <span class="text-[9px] lg:text-sm font-bold lg:font-medium">Map</span>
             </button>
-            <button type="button" onclick="switchTab('calendar', event)" data-tab="calendar" class="sidebar-link flex-1 lg:flex-none p-4 rounded-xl flex flex-col lg:flex-row items-center gap-1 lg:gap-4 text-slate-400 hover:text-white">
-                <i class="fa-solid fa-calendar-days text-xl"></i>
-                <span class="text-[10px] lg:text-sm font-bold lg:font-medium">Schedules</span>
+            <button type="button" onclick="switchTab('calendar', event)" data-tab="calendar" class="sidebar-link flex-1 lg:flex-none p-3 lg:p-4 rounded-xl flex flex-col lg:flex-row items-center gap-1 lg:gap-4 text-slate-400 hover:text-white">
+                <i class="fa-solid fa-calendar-days text-lg lg:text-xl"></i>
+                <span class="text-[9px] lg:text-sm font-bold lg:font-medium">Schedules</span>
             </button>
-            <button type="button" onclick="switchTab('directory', event)" data-tab="directory" class="sidebar-link flex-1 lg:flex-none p-4 rounded-xl flex flex-col lg:flex-row items-center gap-1 lg:gap-4 text-slate-400 hover:text-white">
-                <i class="fa-solid fa-address-book text-xl"></i>
-                <span class="text-[10px] lg:text-sm font-bold lg:font-medium">Directory</span>
+            <button type="button" onclick="switchTab('directory', event)" data-tab="directory" class="sidebar-link flex-1 lg:flex-none p-3 lg:p-4 rounded-xl flex flex-col lg:flex-row items-center gap-1 lg:gap-4 text-slate-400 hover:text-white">
+                <i class="fa-solid fa-address-book text-lg lg:text-xl"></i>
+                <span class="text-[9px] lg:text-sm font-bold lg:font-medium">Directory</span>
             </button>
-            <button type="button" id="mobile-ai-trigger" class="lg:hidden flex-1 p-4 rounded-xl flex flex-col items-center gap-1 text-indigo-400">
-                <i class="fa-solid fa-wand-magic-sparkles text-xl"></i>
-                <span class="text-[10px] font-bold">AI</span>
+            <button type="button" id="mobile-ai-trigger" class="lg:hidden flex-1 p-3 rounded-xl flex flex-col items-center gap-1 text-indigo-400">
+                <i class="fa-solid fa-wand-magic-sparkles text-lg"></i>
+                <span class="text-[9px] font-bold">AI</span>
             </button>
         </div>
 
+        <!-- ADMIN CONTROLS (Desktop Only) -->
         <div class="hidden lg:block p-4 mt-auto">
             <div id="admin-controls" class="hidden mb-4 space-y-2">
-                <button type="button" onclick="openClassModal()" class="w-full p-4 bg-emerald-600/20 border border-emerald-500/30 rounded-2xl flex items-center justify-center gap-3 font-bold text-emerald-400 hover:bg-emerald-600/30 transition">
-                    <i class="fa-solid fa-plus-circle"></i>
-                    <span>Manage Classes</span>
-                </button>
+                <div class="grid grid-cols-2 gap-2">
+                    <button type="button" onclick="openClassModal()" class="p-3 bg-emerald-600/20 border border-emerald-500/30 rounded-xl flex flex-col items-center justify-center gap-1 font-bold text-emerald-400 hover:bg-emerald-600/30 transition">
+                        <i class="fa-solid fa-plus-circle"></i>
+                        <span class="text-[10px] uppercase">Add</span>
+                    </button>
+                    <button type="button" onclick="openDeleteModal()" class="p-3 bg-red-600/20 border border-red-500/30 rounded-xl flex flex-col items-center justify-center gap-1 font-bold text-red-400 hover:bg-red-600/30 transition">
+                        <i class="fa-solid fa-trash-can"></i>
+                        <span class="text-[10px] uppercase">Delete</span>
+                    </button>
+                </div>
             </div>
             <div class="glass-card p-4 rounded-2xl mb-4">
                 <p class="text-[10px] font-black text-pink-500 uppercase mb-3 tracking-widest">Global Filter</p>
@@ -134,10 +151,10 @@
     </nav>
 
     <!-- MAIN CONTENT -->
-    <main class="flex-grow flex flex-col relative overflow-hidden h-[calc(100vh-80px)] lg:h-screen">
+    <main class="flex-grow flex flex-col relative overflow-hidden h-full">
         <header class="h-16 lg:h-20 flex items-center justify-between px-4 lg:px-8 border-b border-white/5 bg-slate-950/40 backdrop-blur-md shrink-0">
             <div id="page-title-box">
-                <h2 id="view-title" class="text-lg lg:text-xl font-bold text-white leading-tight">Campus Navigator</h2>
+                <h2 id="view-title" class="text-base lg:text-xl font-bold text-white leading-tight">Campus Navigator</h2>
                 <p id="view-subtitle" class="hidden lg:block text-[10px] text-slate-500 uppercase font-black tracking-widest">Interactive Map & Room Finder</p>
             </div>
 
@@ -146,7 +163,7 @@
                     <span id="current-time" class="text-sm lg:text-lg font-bold text-white leading-none">12:00 PM</span>
                     <span id="current-date" class="text-[10px] text-slate-500 font-bold uppercase hidden lg:block">Monday, Jan 1</span>
                 </div>
-                <button type="button" id="login-trigger" class="p-2 lg:px-5 lg:py-2 glass-card rounded-xl text-xs font-bold hover:text-pink-500 transition">
+                <button type="button" id="login-trigger" class="px-3 py-1.5 lg:px-5 lg:py-2 glass-card rounded-xl text-[10px] lg:text-xs font-bold hover:text-pink-500 transition">
                     <i class="fa-solid fa-shield-halved lg:mr-2"></i><span class="hidden lg:inline">Admin</span>
                 </button>
             </div>
@@ -155,19 +172,19 @@
         <div class="flex-grow relative overflow-hidden">
             <!-- MAP TAB -->
             <div id="tab-map" class="tab-content absolute inset-0 p-4 lg:p-8 flex flex-col scroll-container">
-                <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 h-full min-h-[500px]">
-                    <div class="lg:col-span-3 glass-card rounded-2xl lg:rounded-3xl relative overflow-hidden flex items-center justify-center border-dashed border-2 border-white/10 min-h-[300px]">
+                <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 h-full">
+                    <div class="lg:col-span-3 glass-card rounded-2xl lg:rounded-3xl relative overflow-hidden flex items-center justify-center border-dashed border-2 border-white/10 min-h-[250px] lg:min-h-0">
                         <div class="text-center px-4">
                             <i class="fa-solid fa-map-marked-alt text-4xl lg:text-6xl text-slate-800 mb-4"></i>
                             <p class="text-slate-500 text-sm font-medium">Interactive map optimized for touch...</p>
                         </div>
                     </div>
                     <div class="flex flex-col gap-4">
-                        <div class="glass-card p-6 rounded-3xl">
-                            <h4 class="font-bold text-white mb-4">Quick Find</h4>
+                        <div class="glass-card p-5 lg:p-6 rounded-2xl lg:rounded-3xl">
+                            <h4 class="font-bold text-white mb-4 text-sm lg:text-base">Quick Find</h4>
                             <div class="space-y-2">
-                                <button type="button" class="w-full p-3 bg-slate-800/50 rounded-xl text-left text-sm flex items-center gap-3"><i class="fa-solid fa-flask text-blue-400"></i>Science Lab</button>
-                                <button type="button" class="w-full p-3 bg-slate-800/50 rounded-xl text-left text-sm flex items-center gap-3"><i class="fa-solid fa-book text-emerald-400"></i>Library</button>
+                                <button type="button" class="w-full p-3 bg-slate-800/50 rounded-xl text-left text-xs lg:text-sm flex items-center gap-3"><i class="fa-solid fa-flask text-blue-400"></i>Science Lab</button>
+                                <button type="button" class="w-full p-3 bg-slate-800/50 rounded-xl text-left text-xs lg:text-sm flex items-center gap-3"><i class="fa-solid fa-book text-emerald-400"></i>Library</button>
                             </div>
                         </div>
                     </div>
@@ -177,11 +194,11 @@
             <!-- CALENDAR TAB -->
             <div id="tab-calendar" class="tab-content absolute inset-0 hidden p-2 lg:p-4 flex flex-col">
                 <div class="lg:hidden flex gap-2 mb-2 overflow-x-auto pb-2 shrink-0 no-scrollbar">
-                    <button type="button" onclick="setSchoolLevel('Junior High')" class="level-btn active whitespace-nowrap px-4 py-2 bg-slate-800 rounded-full text-xs font-bold border border-white/5" data-level="Junior High">JHS</button>
-                    <button type="button" onclick="setSchoolLevel('Senior High')" class="level-btn whitespace-nowrap px-4 py-2 bg-slate-800 rounded-full text-xs font-bold border border-white/5" data-level="Senior High">SHS</button>
-                    <select id="mobile-program-select" class="bg-slate-800 rounded-full px-4 py-2 text-xs font-bold border border-white/5 outline-none"></select>
+                    <button type="button" onclick="setSchoolLevel('Junior High')" class="level-btn active whitespace-nowrap px-4 py-1.5 bg-slate-800 rounded-full text-[10px] font-bold border border-white/5" data-level="Junior High">JHS</button>
+                    <button type="button" onclick="setSchoolLevel('Senior High')" class="level-btn whitespace-nowrap px-4 py-1.5 bg-slate-800 rounded-full text-[10px] font-bold border border-white/5" data-level="Senior High">SHS</button>
+                    <select id="mobile-program-select" class="bg-slate-800 rounded-full px-4 py-1.5 text-[10px] font-bold border border-white/5 outline-none"></select>
                 </div>
-                <div class="flex-grow glass-card rounded-2xl lg:rounded-3xl p-2 lg:p-6 relative overflow-hidden scroll-container">
+                <div class="flex-grow glass-card rounded-2xl lg:rounded-3xl p-1 lg:p-6 relative overflow-hidden">
                     <div id="calendar" class="h-full"></div>
                 </div>
             </div>
@@ -190,15 +207,15 @@
             <div id="tab-directory" class="tab-content absolute inset-0 hidden p-4 lg:p-8 flex flex-col">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 shrink-0">
                     <div>
-                        <h3 class="text-xl lg:text-2xl font-bold text-white">Faculty & Staff</h3>
-                        <p class="text-xs text-slate-500">Academic personnel directory</p>
+                        <h3 class="text-lg lg:text-2xl font-bold text-white">Faculty & Staff</h3>
+                        <p class="text-[10px] lg:text-xs text-slate-500">Academic personnel directory</p>
                     </div>
                     <div class="relative">
-                        <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></i>
-                        <input type="text" id="directory-search" placeholder="Search staff..." class="w-full sm:w-64 bg-slate-800 border-none rounded-xl lg:rounded-2xl pl-11 pr-4 py-2 lg:py-3 text-sm text-white ring-1 ring-white/10 outline-none">
+                        <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i>
+                        <input type="text" id="directory-search" placeholder="Search staff..." class="w-full sm:w-64 bg-slate-800 border-none rounded-xl lg:rounded-2xl pl-11 pr-4 py-2.5 lg:py-3 text-sm text-white ring-1 ring-white/10 outline-none">
                     </div>
                 </div>
-                <div id="directory-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 overflow-y-auto scroll-container pr-2 pb-10"></div>
+                <div id="directory-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 overflow-y-auto scroll-container pr-1 pb-10"></div>
             </div>
         </div>
     </main>
@@ -268,6 +285,25 @@
         </div>
     </div>
 
+    <!-- MODAL: DELETE CLASS -->
+    <div id="modal-delete" class="fixed inset-0 bg-slate-950/95 backdrop-blur-xl hidden items-center justify-center z-[110] p-4">
+        <div class="w-full max-w-lg glass p-8 rounded-[32px] relative flex flex-col max-h-[90vh]">
+            <button type="button" class="close-modal absolute top-6 right-6 text-slate-500 hover:text-white transition"><i class="fa-solid fa-xmark text-xl"></i></button>
+            <div class="mb-6">
+                <h3 class="text-xl font-bold text-white">Delete Sessions</h3>
+                <p class="text-slate-400 text-xs mt-1">Select a session to remove from the system</p>
+            </div>
+            
+            <div id="delete-list" class="flex-grow overflow-y-auto space-y-2 pr-2 scroll-container min-h-[300px]">
+                <div class="text-center py-10 text-slate-500">Loading sessions...</div>
+            </div>
+            
+            <div class="mt-6 pt-4 border-t border-white/5">
+                <p class="text-[10px] text-slate-500 text-center uppercase font-black tracking-widest">Only your own scheduled sessions are shown</p>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL: AI DRAWER -->
     <div id="modal-ai" class="fixed inset-0 bg-slate-950/40 hidden justify-end z-[120]">
         <div class="w-full max-w-md glass flex flex-col h-full lg:h-auto shadow-2xl">
@@ -301,7 +337,7 @@
     </div>
 
     <script>
-        const apiKey = "AIzaSyDVWjA31ScGRW7mWIDbO9TsLC_9vtL9uFs"; // Provided by environment
+        const apiKey = "AIzaSyDVWjA31ScGRW7mWIDbO9TsLC_9vtL9uFs"; 
         const CONFIG = {
             SUPABASE_URL: "https://nwwkgmlnnlsmbjrvcnaj.supabase.co",
             SUPABASE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im53d2tnbWxubmxzbWJqcnZjbmFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3OTYxMDcsImV4cCI6MjA4MTM3MjEwN30.Stz0PC0XAxlAkmHpWxY9reIeVzbXaDKuiSUOrJ4HB7Y", 
@@ -353,6 +389,7 @@
 
             if(state.calendar) {
                 state.calendar.changeView(isMobile ? 'listDay' : 'timeGridDay');
+                state.calendar.updateSize(); // Fix resizing issues
                 state.calendar.refetchEvents();
                 return;
             }
@@ -365,7 +402,7 @@
                     right: isMobile ? '' : 'timeGridDay,timeGridWeek' 
                 },
                 slotMinTime: '07:00:00', slotMaxTime: '18:00:00',
-                allDaySlot: false, height: 'parent',
+                allDaySlot: false, height: '100%',
                 events: async (info, success, failure) => {
                     let query = supabase.from('classes').select(`
                         id, subject, start_time, end_time,
@@ -385,6 +422,7 @@
                     if(error) return failure(error);
 
                     success(data.map(c => ({
+                        id: c.id,
                         title: `${c.subject} (${c.profiles?.full_name || 'TBA'})`,
                         start: c.start_time,
                         end: c.end_time,
@@ -409,7 +447,6 @@
             state.level = level;
             state.program = 'all';
             
-            // Highlight buttons in both desktop and mobile UI
             document.querySelectorAll('.level-btn').forEach(btn => {
                 if (btn.getAttribute('data-level') === level) {
                     btn.classList.add('active');
@@ -426,11 +463,11 @@
             const { data } = await supabase.from('profiles').select('*').in('role', ['admin', 'teacher']).order('full_name');
             document.getElementById('directory-grid').innerHTML = (data || []).map(p => `
                 <div class="glass-card p-4 rounded-2xl flex items-center gap-4 hover:border-pink-500/30 transition-colors">
-                    <div class="w-12 h-12 rounded-xl bg-pink-500/10 flex items-center justify-center text-pink-500 font-bold">
+                    <div class="w-12 h-12 rounded-xl bg-pink-500/10 flex items-center justify-center text-pink-500 font-bold shrink-0">
                         ${p.full_name[0]}
                     </div>
-                    <div class="flex-grow">
-                        <h4 class="font-bold text-white text-sm">${p.full_name}</h4>
+                    <div class="flex-grow min-w-0">
+                        <h4 class="font-bold text-white text-sm truncate">${p.full_name}</h4>
                         <p class="text-[10px] text-slate-500 font-black uppercase tracking-widest">${p.role}</p>
                     </div>
                 </div>
@@ -478,6 +515,63 @@
             document.getElementById('modal-class').classList.replace('hidden', 'flex');
         }
 
+        async function openDeleteModal() {
+            if (!state.user) return;
+            const container = document.getElementById('delete-list');
+            container.innerHTML = `<div class="text-center py-10 text-slate-500"><i class="fa-solid fa-circle-notch animate-spin mr-2"></i>Loading sessions...</div>`;
+            document.getElementById('modal-delete').classList.replace('hidden', 'flex');
+
+            const { data, error } = await supabase.from('classes').select(`
+                id, subject, start_time,
+                programs!classes_program_id_fkey(grade_level, section)
+            `).eq('teacher_id', state.user.id).order('start_time', { ascending: false });
+
+            if (error || !data || data.length === 0) {
+                container.innerHTML = `<div class="text-center py-10 text-slate-500">No sessions found created by you.</div>`;
+                return;
+            }
+
+            container.innerHTML = data.map(c => {
+                const date = new Date(c.start_time);
+                return `
+                <div class="glass-card p-4 rounded-xl flex items-center justify-between group hover:bg-red-500/5 transition">
+                    <div class="min-w-0 pr-2">
+                        <h4 class="font-bold text-white text-sm truncate">${c.subject}</h4>
+                        <p class="text-[9px] text-slate-500 font-bold uppercase truncate">
+                            Gr. ${c.programs?.grade_level} ${c.programs?.section} • ${date.toLocaleDateString()}
+                        </p>
+                    </div>
+                    <button onclick="handleDeleteClass('${c.id}', this)" class="w-10 h-10 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white rounded-lg transition-all flex items-center justify-center shrink-0">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                </div>
+                `;
+            }).join('');
+        }
+
+        async function handleDeleteClass(id, btn) {
+            const originalIcon = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-circle-notch animate-spin"></i>`;
+
+            const { error } = await supabase.from('classes').delete().eq('id', id);
+
+            if (error) {
+                btn.classList.add('bg-red-600', 'text-white');
+                btn.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i>`;
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.innerHTML = originalIcon;
+                    btn.classList.remove('bg-red-600', 'text-white');
+                }, 2000);
+            } else {
+                btn.closest('.glass-card').style.opacity = '0.5';
+                btn.closest('.glass-card').style.pointerEvents = 'none';
+                btn.innerHTML = `<i class="fa-solid fa-check"></i>`;
+                if(state.calendar) state.calendar.refetchEvents();
+            }
+        }
+
         async function handleClassSubmit(e) {
             e.preventDefault();
             const btn = e.target.querySelector('button');
@@ -505,7 +599,6 @@
             const { error } = await supabase.from('classes').insert([payload]);
 
             if (error) {
-                console.error(error);
                 btn.classList.replace('bg-emerald-600', 'bg-red-600');
                 btn.textContent = "Error Saving";
             } else {
@@ -528,8 +621,7 @@
 
         // --- AI ASSISTANT ---
         async function callGemini(userQuery) {
-            const systemPrompt = `You are the STEC Smart Assistant. You help students and staff at Science and Technology Education Center (STEC). 
-            Context: Levels: JHS/SHS. Sections: Silver, Gold, Pasteur, etc. Concise help only.`;
+            const systemPrompt = `You are the STEC Smart Assistant. You help students and staff at Science and Technology Education Center (STEC). Context: Levels: JHS/SHS. Sections: Silver, Gold, Pasteur, etc. Concise help only.`;
 
             let retries = 0;
             const delays = [1000, 2000, 4000, 8000, 16000];
@@ -601,12 +693,16 @@
             const { data } = await supabase.from('programs').select('*').order('grade_level');
             state.allPrograms = data || [];
             updateProgramSelect();
-            setSchoolLevel('Junior High'); // Initialize highlight
+            setSchoolLevel('Junior High'); 
             switchTab('map');
         };
 
         window.onresize = () => {
-            if(state.calendar) renderCalendar();
+            if(state.calendar) {
+                state.calendar.updateSize();
+                const isMobile = window.innerWidth < 1024;
+                state.calendar.changeView(isMobile ? 'listDay' : 'timeGridDay');
+            }
         };
 
         document.addEventListener('change', (e) => {
