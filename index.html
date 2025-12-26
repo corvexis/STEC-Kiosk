@@ -96,7 +96,6 @@
 </head>
 <body>
 
-    <!-- HEADER -->
     <header class="h-[72px] bg-gray-900 border-b border-gray-800 flex items-center justify-between px-6 z-[100] relative">
         <div class="flex items-center gap-3">
             <div class="w-10 h-10 bg-pink-600 rounded-xl flex items-center justify-center shadow-lg">
@@ -165,9 +164,6 @@
                             <button onclick="ui.openModal('modal-add')" class="w-full py-4 bg-pink-600 rounded-2xl text-xs font-bold text-white mb-2 interactive-btn shadow-lg">
                                 <i class="fa-solid fa-plus-circle mr-2"></i> POST SESSION
                             </button>
-                            <button onclick="app.loadUserPosts()" class="w-full py-4 bg-gray-800 rounded-2xl text-xs font-bold text-gray-300 interactive-btn border border-gray-700">
-                                <i class="fa-solid fa-list-check mr-2"></i> MANAGE POSTS
-                            </button>
                         </div>
                     </div>
                 </div>
@@ -193,7 +189,7 @@
         <div class="bg-gray-900 border border-gray-800 p-6 rounded-[2rem] w-full max-w-lg shadow-2xl relative">
             <button onclick="ui.closeModals()" class="absolute top-6 right-6 text-gray-500"><i class="fa-solid fa-times text-xl"></i></button>
             <h3 class="text-xl font-black mb-6 text-pink-500">Create New Event</h3>
-            <form onsubmit="app.createPost(event)" class="grid grid-cols-2 gap-4">
+            <form id="add-event-form" onsubmit="app.createPost(event)" class="grid grid-cols-2 gap-4">
                 <div class="col-span-2">
                     <label class="text-[10px] font-bold text-gray-500 mb-1 ml-2 block uppercase">Event / Subject Name</label>
                     <input type="text" id="f-subject" placeholder="Enter title" required class="w-full bg-gray-950 border border-gray-800 p-4 rounded-xl text-sm outline-none focus:border-pink-500 text-white">
@@ -391,18 +387,26 @@
             },
             populateDropdowns(gradeElId, sectionElId, roomElId = null) {
                 const levelProgs = state.programs.filter(x => x.name === state.currentLevel);
-                const grades = [...new Set(levelProgs.map(p => p.grade_level))].filter(Boolean).sort((a,b) => {
-                    const numA = parseInt(a.replace(/\D/g,'')) || 0;
-                    const numB = parseInt(b.replace(/\D/g,'')) || 0;
-                    return numA - numB;
-                });
+                
+                // Extract unique Grade Levels for this current Level (JHS or SHS)
+                const grades = [...new Set(levelProgs.map(p => p.grade_level))]
+                    .filter(Boolean)
+                    .sort((a,b) => {
+                        const numA = parseInt(a.replace(/\D/g,'')) || 0;
+                        const numB = parseInt(b.replace(/\D/g,'')) || 0;
+                        return numA - numB;
+                    });
 
                 const gradeEl = document.getElementById(gradeElId);
-                gradeEl.innerHTML = `<option value="">${gradeElId.includes('filter') ? 'All Grades' : 'Select Grade'}</option>` + 
-                    grades.map(g => `<option value="${g}">${g}</option>`).join('');
+                if(gradeEl) {
+                    gradeEl.innerHTML = `<option value="">${gradeElId.includes('filter') ? 'All Grades' : 'Select Grade'}</option>` + 
+                        grades.map(g => `<option value="${g}">${g}</option>`).join('');
+                }
 
                 const sectionEl = document.getElementById(sectionElId);
-                sectionEl.innerHTML = `<option value="">${sectionElId.includes('filter') ? 'All Sections' : 'Select Section'}</option>`;
+                if(sectionEl) {
+                    sectionEl.innerHTML = `<option value="">${sectionElId.includes('filter') ? 'All Sections' : 'Select Section'}</option>`;
+                }
 
                 if(roomElId) {
                     const roomEl = document.getElementById(roomElId);
@@ -419,9 +423,11 @@
                     return;
                 }
 
-                const sections = levelProgs.filter(p => p.grade_level === gradeVal);
+                // Filter sections based on selected grade
+                const filtered = levelProgs.filter(p => p.grade_level === gradeVal);
+                
                 sectionEl.innerHTML = `<option value="">${sectionElId.includes('filter') ? 'All Sections' : 'Select Section'}</option>` + 
-                    sections.map(s => `<option value="${s.id}">${s.section || 'Unspecified'}</option>`).join('');
+                    filtered.map(s => `<option value="${s.id}">${s.section || 'Unspecified'}</option>`).join('');
             },
             updateFilterSections() {
                 app.updateSectionOptions('filter-grade', 'filter-section');
@@ -446,8 +452,11 @@
                 state.currentLevel = l;
                 document.getElementById('lvl-jhs').className = l === 'Junior High' ? "flex-1 py-3 bg-pink-600 rounded-2xl text-xs font-bold" : "flex-1 py-3 bg-gray-800 rounded-2xl text-xs font-bold";
                 document.getElementById('lvl-shs').className = l === 'Senior High' ? "flex-1 py-3 bg-pink-600 rounded-2xl text-xs font-bold" : "flex-1 py-3 bg-gray-800 rounded-2xl text-xs font-bold";
+                
+                // Refresh dropdowns based on new level
                 app.populateDropdowns('filter-grade', 'filter-section');
                 app.applyFilter();
+                
                 if (state.calendar) state.calendar.refetchEvents();
             },
             renderCalendar() {
@@ -458,15 +467,26 @@
                     allDaySlot: false,
                     slotMinTime: '07:00:00',
                     slotMaxTime: '18:00:00',
+                    headerToolbar: { left: 'prev,next', center: 'title', right: 'listDay,timeGridDay' },
                     events: async (i, s) => {
                         let pIds = [];
-                        if(state.filterSectionId) pIds = [state.filterSectionId];
-                        else if (state.filterGrade) pIds = state.programs.filter(x => x.name === state.currentLevel && x.grade_level === state.filterGrade).map(x => x.id);
-                        else pIds = state.programs.filter(x => x.name === state.currentLevel).map(x => x.id);
+                        if(state.filterSectionId) {
+                            pIds = [state.filterSectionId];
+                        } else if (state.filterGrade) {
+                            pIds = state.programs.filter(x => x.name === state.currentLevel && x.grade_level === state.filterGrade).map(x => x.id);
+                        } else {
+                            pIds = state.programs.filter(x => x.name === state.currentLevel).map(x => x.id);
+                        }
 
                         if(pIds.length === 0) { s([]); return; }
                         const { data } = await sb.from('classes').select('*, rooms(name)').in('program_id', pIds);
-                        s((data || []).map(c => ({ id: c.id, title: `${c.subject} (${c.rooms?.name})`, start: c.start_time, end: c.end_time })));
+                        s((data || []).map(c => ({ 
+                            id: c.id, 
+                            title: `${c.subject} (${c.rooms?.name || 'No Room'})`, 
+                            start: c.start_time, 
+                            end: c.end_time,
+                            color: '#ec4899'
+                        })));
                     }
                 });
                 state.calendar.render();
@@ -478,6 +498,27 @@
                         <div class="w-12 h-12 rounded-2xl bg-gray-800 flex items-center justify-center font-black text-pink-500 border border-gray-700">${p.full_name[0]}</div>
                         <div class="truncate"><h4 class="text-sm font-bold text-white">${p.full_name}</h4><p class="text-[10px] text-gray-500 uppercase">${p.role || 'Personnel'}</p></div>
                     </div>`).join('');
+            },
+            async createPost(e) {
+                e.preventDefault();
+                if(!state.currentUser) return;
+                
+                const payload = {
+                    subject: document.getElementById('f-subject').value,
+                    program_id: document.getElementById('f-program').value,
+                    room_id: document.getElementById('f-room').value,
+                    start_time: `${document.getElementById('f-date').value}T${document.getElementById('f-start').value}`,
+                    end_time: `${document.getElementById('f-date').value}T${document.getElementById('f-end').value}`,
+                    teacher_id: state.currentUser.id
+                };
+
+                const { error } = await sb.from('classes').insert([payload]);
+                if(!error) {
+                    ui.closeModals();
+                    if(state.calendar) state.calendar.refetchEvents();
+                } else {
+                    console.error("Insert Error:", error);
+                }
             }
         };
 
